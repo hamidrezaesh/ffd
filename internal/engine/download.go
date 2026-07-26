@@ -20,6 +20,7 @@ type Request struct {
 
 type Result struct {
 	Metadata metadata.Metadata
+	Filename string
 	Progress *tracker.Progress
 	Done     chan error
 }
@@ -74,6 +75,7 @@ func Download(req Request) (*Result, error) {
 
 	result := &Result{
 		Metadata: md,
+		Filename: filename,
 		Progress: progress,
 		Done:     make(chan error, 1),
 	}
