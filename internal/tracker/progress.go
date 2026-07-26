@@ -11,6 +11,7 @@ type ProgressInfo struct {
 	Total      int64   `json:"total"`
 	Speed      int64   `json:"speed"`
 	Percent    float64 `json:"percent"`
+	TimeLeft   time.Duration
 }
 
 type Progress struct {
@@ -96,11 +97,26 @@ func (p *Progress) GetPercent() float64 {
 	return float64(downloaded) / float64(p.Total) * 100
 }
 
+func (p *Progress) GetTimeLeft() time.Duration {
+	speed := p.GetSpeed()
+
+	if speed <= 0 {
+		return 0
+	}
+
+	remaining := p.GetRemaining()
+
+	return time.Duration(
+		remaining/speed,
+	) * time.Second
+}
+
 func (p *Progress) Info() ProgressInfo {
 	return ProgressInfo{
 		Downloaded: p.GetDownloaded(),
 		Total:      p.GetTotal(),
 		Speed:      p.GetSpeed(),
 		Percent:    p.GetPercent(),
+		TimeLeft:   p.GetTimeLeft(),
 	}
 }
