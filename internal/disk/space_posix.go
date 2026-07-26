@@ -12,5 +12,5 @@ func FreeSpace(path string) (int64, error) {
 	}
 
 	free := stat.Bavail * uint64(stat.Bsize)
-	return int64(free),  nil
+	return int64(free), nil
 }

@@ -8,8 +8,8 @@ import (
 
 type FileInfo struct {
 	Filename  string
-	Path       string
-	TotalSize  int64
+	Path      string
+	TotalSize int64
 }
 
 func Allocate(f FileInfo) (*os.File, error) {
