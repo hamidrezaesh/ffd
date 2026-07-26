@@ -1,6 +1,6 @@
 # FFD
 
-![Version](https://img.shields.io/badge/version-v0.1.0-2CA5E0)
+![Version](https://img.shields.io/badge/version-v0.1.1-2CA5E0)
 
 `ffd` is a simple command-line tool for downloading files quickly using multiple HTTP byte ranges when supported by the server.
 
