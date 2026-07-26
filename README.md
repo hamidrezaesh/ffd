@@ -19,6 +19,52 @@
 
 ## Installation
 
+### Download a Release
+
+Download the latest version of ffd from the Releases page.
+
+Choose the archive matching your operating system and CPU architecture:
+
+| Operating System | Architecture |
+|------------------|---------------|
+| Linux | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_linux_amd64.tar.gz) |
+| Linux | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_linux_arm64.tar.gz) |
+| macOS | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_darwin_amd64.tar.gz) |
+| macOS | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_darwin_arm64.tar.gz) |
+| Windows | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_windows_amd64.zip) |
+| Windows | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_windows_arm64.zip) |
+
+#### Linux / macOS
+
+Extract the downloaded archive:
+
+```bash
+tar -xzf ffd_*.tar.gz
+```
+
+Then install the binary:
+
+```bash
+sudo install -m 755 ffd /usr/local/bin/ffd
+```
+
+Verify the installation:
+
+```bash
+ffd --help
+```
+
+#### Windows
+Download the appropriate .zip archive from the Releases page.
+Extract ffd.exe.
+Add its directory to your PATH.
+
+Then run:
+
+```bash
+ffd --help
+```
+
 ### From source
 
 Make sure you have Go installed, then clone the repository:
