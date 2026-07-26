@@ -1,3 +1,5 @@
+//go:build windows
+
 package disk
 
 import "golang.org/x/sys/windows"
