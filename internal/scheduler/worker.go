@@ -33,6 +33,10 @@ func Worker(t Task, progress *tracker.Progress) error {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusPartialContent {
+		return fmt.Errorf("unexpected HTTP status: %v", resp.Status)
+	}
+
 	buf := make([]byte, 128*1024)
 
 	offset := t.Range.Start
