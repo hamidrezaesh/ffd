@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/tracker"
 )
@@ -16,7 +17,7 @@ type Task struct {
 	Client *http.Client
 }
 
-func Worker(t Task, progress *tracker.Progress) error {
+func fetchFromOffset(t Task, progress *tracker.Progress, offset *int64) error {
 	req, err := http.NewRequest("GET", t.URL, nil)
 	if err != nil {
 		return err
@@ -24,7 +25,7 @@ func Worker(t Task, progress *tracker.Progress) error {
 
 	req.Header.Set(
 		"Range",
-		fmt.Sprintf("bytes=%d-%d", t.Range.Start, t.Range.End),
+		fmt.Sprintf("bytes=%d-%d", *offset, t.Range.End),
 	)
 
 	resp, err := t.Client.Do(req)
@@ -39,20 +40,18 @@ func Worker(t Task, progress *tracker.Progress) error {
 
 	buf := make([]byte, 128*1024)
 
-	offset := t.Range.Start
-
 	for {
 		n, err := resp.Body.Read(buf)
 
 		if n > 0 {
-			_, wErr := t.File.WriteAt(buf[:n], offset)
+			_, wErr := t.File.WriteAt(buf[:n], *offset)
 			if wErr != nil {
 				return wErr
 			}
 
 			progress.AddDownloaded(int64(n))
 
-			offset += int64(n)
+			*offset += int64(n)
 		}
 
 		if err == io.EOF {
@@ -62,6 +61,30 @@ func Worker(t Task, progress *tracker.Progress) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func Worker(t Task, progress *tracker.Progress, maxRetries int) error {
+	if maxRetries <= -1 {
+		maxRetries = 4
+	}
+
+	offset := t.Range.Start
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt == maxRetries {
+			return fmt.Errorf("download failed after %d retries.", maxRetries)
+		}
+
+		err := fetchFromOffset(t, progress, &offset)
+
+		if err == nil {
+			return nil
+		}
+
+		time.Sleep(time.Second * 3)
 	}
 
 	return nil

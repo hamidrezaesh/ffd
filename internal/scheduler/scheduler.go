@@ -17,6 +17,7 @@ func Download(
 	maxWorkers int,
 	client *http.Client,
 	progress *tracker.Progress,
+	maxRetires int,
 ) error {
 
 	var (
@@ -56,7 +57,7 @@ func Download(
 				Client: client,
 			}
 
-			if err := Worker(task, progress); err != nil {
+			if err := Worker(task, progress, maxRetires); err != nil {
 				errCh <- err
 			}
 		}(r)

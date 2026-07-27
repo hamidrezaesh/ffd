@@ -25,7 +25,7 @@ type Result struct {
 	Done     chan error
 }
 
-func Download(req Request) (*Result, error) {
+func Download(req Request, maxRetires int) (*Result, error) {
 	transport := &http.Transport{
 		MaxIdleConns:        16,
 		MaxIdleConnsPerHost: 16,
@@ -99,6 +99,7 @@ func Download(req Request) (*Result, error) {
 			8,
 			client,
 			progress,
+			maxRetires,
 		)
 
 		result.Done <- err

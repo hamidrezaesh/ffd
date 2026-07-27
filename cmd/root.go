@@ -13,7 +13,6 @@ import (
 var commandsHelp string = `usage: ffd [URL]...[OPTION]
 
 Startup:
--v, --version	Show the version of ffd
 -h, --help	Show help
 
 Options:
@@ -23,20 +22,18 @@ Example: ffd <URL> -o my-file
 -w, --wait SECONDS	Wait before starting the download
 Example: ffd <URL> -w 100
 
--p, --path PATH	save the file to a custom directory
+-p, --path PATH	save the file to a custom directory (default .)
 Example: ffd <URL> -p /path/to/your/folder
 
-Examples:
-ffd https://example.com/file.zip
-ffd https://example.com/file.zip -o my-file
-ffd https://example.com/file.zip -w 100
-ffd https://example.com/file.zip -p ~/Downloads
+-r --max-retires NUMBER_OF_RETRIES	Total retries after connection failed (default 4)
+Example: ffd <URL> -r 10
 `
 
 var (
-	output string
-	wait   int
-	path   string
+	output     string
+	wait       int
+	path       string
+	maxRetires int
 )
 
 var rootCmd = &cobra.Command{
@@ -73,7 +70,7 @@ var rootCmd = &cobra.Command{
 		startTime := time.Now()
 
 		// Start download.
-		result, err := engine.Download(req)
+		result, err := engine.Download(req, maxRetires)
 
 		if err != nil {
 			fmt.Printf(
@@ -148,6 +145,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&wait, "wait", "w", 0, "Wait before starting download (seconds)")
 	rootCmd.Flags().StringVarP(&output, "output", "o", "", "Custom Filename")
 	rootCmd.Flags().StringVarP(&path, "path", "p", ".", "Download Directory")
+	rootCmd.Flags().IntVarP(&maxRetires, "max-retries", "r", 4, "Total retries after connection failed")
 
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		fmt.Println(commandsHelp)
