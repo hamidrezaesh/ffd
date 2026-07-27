@@ -3,6 +3,7 @@ package engine
 import (
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/disk"
 	"github.com/hamidrezaesh/ffd/internal/metadata"
@@ -15,7 +16,6 @@ type Request struct {
 	URL      string
 	Path     string
 	Filename string
-	Client   *http.Client
 }
 
 type Result struct {
@@ -26,10 +26,16 @@ type Result struct {
 }
 
 func Download(req Request) (*Result, error) {
-	client := req.Client
+	transport := &http.Transport{
+		MaxIdleConns:        16,
+		MaxIdleConnsPerHost: 16,
+		MaxConnsPerHost:     0,
+		IdleConnTimeout:     90 * time.Second,
+		ForceAttemptHTTP2:   false,
+	}
 
-	if client == nil {
-		client = http.DefaultClient
+	client := &http.Client{
+		Transport: transport,
 	}
 
 	// Get response
