@@ -1,6 +1,6 @@
 # FFD
 
-![Version](https://img.shields.io/badge/version-v0.1.1-2CA5E0)
+![Version](https://img.shields.io/badge/version-v0.1.12-2CA5E0)
 
 `ffd` is a simple command-line tool for downloading files quickly using multiple HTTP byte ranges when supported by the server.
 
@@ -27,12 +27,12 @@ Choose the archive matching your operating system and CPU architecture:
 
 | Operating System | Architecture |
 |------------------|---------------|
-| Linux | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_linux_amd64.tar.gz) |
-| Linux | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_linux_arm64.tar.gz) |
-| macOS | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_darwin_amd64.tar.gz) |
-| macOS | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_darwin_arm64.tar.gz) |
-| Windows | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_windows_amd64.zip) |
-| Windows | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.1.1_windows_arm64.zip) |
+| Linux | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_linux_amd64.tar.gz) |
+| Linux | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.12.12_linux_arm64.tar.gz) |
+| macOS | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_darwin_amd64.tar.gz) |
+| macOS | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_darwin_arm64.tar.gz) |
+| Windows | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_windows_amd64.zip) |
+| Windows | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_windows_arm64.zip) |
 
 #### Linux / macOS
 
