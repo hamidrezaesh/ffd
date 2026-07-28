@@ -19,6 +19,23 @@
 
 ## Installation
 
+### Quick Install
+#### Linux/Mac
+install the latest release with a single command:
+```bash
+curl -fsSL https://raw.githubusercontent.com/hamidrezaesh/ffd/main/scripts/install.sh | sh
+```
+
+Verify the installation:
+```bash
+ffd --help
+```
+
+#### Windows
+
+> An automated installer for Windows is planned. For now, download the latest release archive and add `ffd.exe` to your `PATH`.
+
+
 ### Download a Release
 
 Download the latest version of ffd from the Releases page.
