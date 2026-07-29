@@ -1,6 +1,13 @@
+<div align="center">
+
 # FFD
 
-![Version](https://img.shields.io/badge/version-v0.1.12-2CA5E0)
+**Fast File Downloader**
+
+[![Version](https://img.shields.io/badge/version-v0.1.12-2CA5E0)](https://github.com/hamidrezaesh/ffd)
+[![Website](https://img.shields.io/badge/website-ffd--cli.pages.dev-111111)](https://ffd-cli.pages.dev)
+
+</div>
 
 `ffd` is a simple command-line tool for downloading files quickly using multiple HTTP byte ranges when supported by the server.
 
