@@ -46,18 +46,7 @@ ffd --help
 
 ### Download a Release
 
-Download the latest version of ffd from the Releases page.
-
-Choose the archive matching your operating system and CPU architecture:
-
-| Operating System | Architecture |
-|------------------|---------------|
-| Linux | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_linux_amd64.tar.gz) |
-| Linux | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.1/ffd_0.12.12_linux_arm64.tar.gz) |
-| macOS | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_darwin_amd64.tar.gz) |
-| macOS | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_darwin_arm64.tar.gz) |
-| Windows | [x86_64/amd64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_windows_amd64.zip) |
-| Windows | [ARM64](https://github.com/hamidrezaesh/ffd/releases/download/v0.1.12/ffd_0.1.12_windows_arm64.zip) |
+Download the latest version of ffd from the [Releases page](https://github.com/hamidrezaesh/ffd/releases) or [official website](https://ffd-cli.pages.dev/install#:~:text=Install%20from%20Release).
 
 #### Linux / macOS
 
