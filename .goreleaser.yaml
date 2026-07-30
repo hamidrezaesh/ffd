@@ -21,3 +21,13 @@ archives:
 
 checksum:
   name_template: checksums.txt
+
+changelog:
+  sort: asc
+  use: git
+  filters:
+    include:
+      - "^feat"
+      - "^fix"
+      - "^perf"
+      - "^refactor"
