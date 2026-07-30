@@ -23,6 +23,7 @@
 * Custom download paths
 * Delayed downloads
 * Cross-platform Go implementation
+* Automatically distributes download chunks among workers for better performance.
 
 ## Installation
 
