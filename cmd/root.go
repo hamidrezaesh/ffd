@@ -25,21 +25,29 @@ Example: ffd <URL> -w 100
 -p, --path PATH	save the file to a custom directory (default .)
 Example: ffd <URL> -p /path/to/your/folder
 
--r --max-retires NUMBER_OF_RETRIES	Total retries after connection failed (default 4)
+-r --max-retries NUMBER_OF_RETRIES	Total retries after connection failed (default 4)
 Example: ffd <URL> -r 10
+
+-W --max-workers NUMBER_OF_WORKERS	Total concurrent workers (default 8)
+Example: ffd <URL> -W 10
+
+-c --max-chunks NUMBER_OF_CHUNKS Total parts of download (default 12)
+Example: ffd <URL> -c 20
 `
 
 var (
 	output     string
 	wait       int
 	path       string
-	maxRetires int
+	maxRetries int
+	maxWorkers int
+	maxChunks  int
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "ffd [URL] [OPTIONS]",
 	Short: "Fast, multi-segment data fetcher",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.ArbitraryArgs,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
@@ -70,7 +78,7 @@ var rootCmd = &cobra.Command{
 		startTime := time.Now()
 
 		// Start download.
-		result, err := engine.Download(req, maxRetires)
+		result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks)
 
 		if err != nil {
 			fmt.Printf(
@@ -145,7 +153,9 @@ func init() {
 	rootCmd.Flags().IntVarP(&wait, "wait", "w", 0, "Wait before starting download (seconds)")
 	rootCmd.Flags().StringVarP(&output, "output", "o", "", "Custom Filename")
 	rootCmd.Flags().StringVarP(&path, "path", "p", ".", "Download Directory")
-	rootCmd.Flags().IntVarP(&maxRetires, "max-retries", "r", 4, "Total retries after connection failed")
+	rootCmd.Flags().IntVarP(&maxRetries, "max-retries", "r", 4, "Total retries after connection failed")
+	rootCmd.Flags().IntVarP(&maxWorkers, "max-workers", "W", 8, "Total concurrent workers")
+	rootCmd.Flags().IntVarP(&maxChunks, "max-chunks", "c", 12, "Total parts of download")
 
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		fmt.Println(commandsHelp)

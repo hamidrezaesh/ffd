@@ -25,7 +25,20 @@ type Result struct {
 	Done     chan error
 }
 
-func Download(req Request, maxRetires int) (*Result, error) {
+func Download(req Request, maxRetries int, maxWorkers int, maxChunks int) (*Result, error) {
+	if maxRetries == 0 {
+		maxRetries = 4
+	}
+	if maxWorkers == 0 {
+		maxWorkers = 8
+	}
+	if maxChunks == 0 {
+		maxChunks = 12
+	}
+	if maxWorkers > maxChunks {
+		maxWorkers = maxChunks
+	}
+
 	transport := &http.Transport{
 		MaxIdleConns:        16,
 		MaxIdleConnsPerHost: 16,
@@ -96,10 +109,11 @@ func Download(req Request, maxRetires int) (*Result, error) {
 			md.TotalSize,
 			md.AcceptRanges,
 			5*1024*1024,
-			8,
+			maxWorkers,
+			maxChunks,
 			client,
 			progress,
-			maxRetires,
+			maxRetries,
 		)
 
 		result.Done <- err

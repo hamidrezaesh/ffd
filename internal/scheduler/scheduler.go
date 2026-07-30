@@ -15,9 +15,10 @@ func Download(
 	acceptRanges bool,
 	minFileSize int64,
 	maxWorkers int,
+	maxChunks int,
 	client *http.Client,
 	progress *tracker.Progress,
-	maxRetires int,
+	maxRetries int,
 ) error {
 
 	var (
@@ -36,33 +37,41 @@ func Download(
 			},
 		}
 	} else {
-		ranges, err = Split(totalSize, maxWorkers, minFileSize)
+		ranges, err = Split(totalSize, maxChunks, minFileSize)
 		if err != nil {
 			return err
 		}
 	}
 
 	errCh = make(chan error, len(ranges))
+	jobs := make(chan ByteRange)
 
-	for _, r := range ranges {
+	for i := 0; i < maxWorkers; i++ {
 		wg.Add(1)
 
-		go func(r ByteRange) {
+		go func() {
 			defer wg.Done()
 
-			task := Task{
-				URL:    url,
-				Range:  r,
-				File:   file,
-				Client: client,
-			}
+			for job := range jobs {
+				t := Task{
+					URL:    url,
+					Range:  job,
+					File:   file,
+					Client: client,
+				}
 
-			if err := Worker(task, progress, maxRetires); err != nil {
-				errCh <- err
+				if workerErr := Worker(t, progress, maxRetries); workerErr != nil {
+					errCh <- workerErr
+				}
 			}
-		}(r)
+		}()
 	}
 
+	for _, r := range ranges {
+		jobs <- r
+	}
+
+	close(jobs)
 	wg.Wait()
 	close(errCh)
 
