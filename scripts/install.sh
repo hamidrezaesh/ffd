@@ -59,7 +59,7 @@ VERSION="${LATEST_TAG#v}"
 # Download URL
 
 ARCHIVE="ffd_${LATEST_TAG#v}_${GOOS}_${GOARCH}.tar.gz"
-URL="https://github.com/hamidrezaesh/ffd/releases/download/$LATEST_TAG/$ARCHIVE"
+URL="https://github.com/$REPO/releases/download/$LATEST_TAG/$ARCHIVE"
 
 TMP_DIR="$(mktemp -d)"
 
