@@ -41,8 +41,23 @@ ffd --help
 
 #### Windows
 
-> An automated installer for Windows is planned. For now, download the latest release archive and add `ffd.exe` to your `PATH`.
+If PowerShell blocks script execution, enable local scripts first:
 
+```bash
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+Then install the latest release:
+
+```bash
+irm https://raw.githubusercontent.com/hamidrezaesh/ffd/main/scripts/install.ps1 | iex
+```
+
+Verify the installation:
+
+```bash
+ffd --help
+```
 
 ### Download a Release
 
