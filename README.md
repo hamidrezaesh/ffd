@@ -108,6 +108,37 @@ Build the binary:
 go build -o ffd
 ```
 
+## Usage
+### Download a file
+```bash
+ffd https://example.com/file.zip
+```
+
+ffd automatically detects the file metadata and, when supported, downloads the file using multiple HTTP byte ranges.
+
+### HTTP Forward Proxy
+
+ffd can also run as a local HTTP forward proxy.
+
+Start the proxy:
+
+```bash
+ffd proxy
+```
+
+By default, the proxy listens on `127.0.0.1:8000`
+
+You can change the port with:
+
+```bash
+ffd proxy --port 9000
+```
+
+Then configure your browser or another HTTP client to use:
+
+HTTP Proxy: 127.0.0.1:8000  
+HTTPS Proxy: 127.0.0.1:8000
+
 ## How it works
 
 When the server supports HTTP byte-range requests, `ffd` divides the file into multiple ranges and downloads them concurrently.
@@ -124,6 +155,7 @@ ffd/
 │   ├── engine/
 │   ├── formatter/
 │   ├── metadata/
+│   ├── proxy/
 │   ├── scheduler/
 │   ├── tracker/
 │   └── validator/
