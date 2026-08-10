@@ -7,10 +7,15 @@ import (
 
 	"github.com/hamidrezaesh/ffd/internal/engine"
 	"github.com/hamidrezaesh/ffd/internal/formatter"
+	"github.com/hamidrezaesh/ffd/internal/proxy"
 	"github.com/spf13/cobra"
 )
 
 var commandsHelp string = `usage: ffd [URL]...[OPTION]
+
+Commands:
+proxy              Start the ffd forward proxy
+Example: ffd proxy
 
 Startup:
 -h, --help	Show help
@@ -35,6 +40,16 @@ Example: ffd <URL> -W 10
 Example: ffd <URL> -c 20
 `
 
+var proxyHelp string = `usage: ffd proxy [OPTION]
+
+Startup:
+-h, --help        Show help
+
+Options:
+--port PORT   Port to run the proxy on (default 8000)
+Example: ffd proxy --port 9000
+`
+
 var (
 	output     string
 	wait       int
@@ -42,6 +57,7 @@ var (
 	maxRetries int
 	maxWorkers int
 	maxChunks  int
+	port       int
 )
 
 var rootCmd = &cobra.Command{
@@ -142,6 +158,14 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+var proxyCmd = &cobra.Command{
+	Use:   "proxy",
+	Short: "Start the ffd forward proxy",
+	Run: func(cmd *cobra.Command, args []string) {
+		proxy.Start(port)
+	},
+}
+
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
@@ -160,4 +184,12 @@ func init() {
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		fmt.Println(commandsHelp)
 	})
+
+	proxyCmd.Flags().IntVarP(&port, "port", "", 8000, "Port of the proxy")
+
+	proxyCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		fmt.Println(proxyHelp)
+	})
+
+	rootCmd.AddCommand(proxyCmd)
 }
