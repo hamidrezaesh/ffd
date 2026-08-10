@@ -102,10 +102,10 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int) (*Resu
 	go func() {
 		defer file.Close()
 		defer progress.Stop()
+		defer close(result.Done)
 
-		err := scheduler.Download(
+		chanChunks, chanErr := scheduler.Download(
 			req.URL,
-			file,
 			md.TotalSize,
 			md.AcceptRanges,
 			5*1024*1024,
@@ -116,8 +116,34 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int) (*Resu
 			maxRetries,
 		)
 
-		result.Done <- err
-		close(result.Done)
+		for chanChunks != nil || chanErr != nil {
+			select {
+			case chunk, ok := <-chanChunks:
+				if !ok {
+					chanChunks = nil
+					continue
+				}
+
+				if _, err := file.WriteAt(chunk.Bytes, chunk.Offset); err != nil {
+					result.Done <- err
+					return
+				}
+
+			case err, ok := <-chanErr:
+				if !ok {
+					chanErr = nil
+					continue
+				}
+
+				if err != nil {
+					result.Done <- err
+				}
+
+				return
+			}
+		}
+
+		result.Done <- nil
 	}()
 
 	return result, nil
