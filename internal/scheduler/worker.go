@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/tracker"
@@ -13,11 +12,22 @@ import (
 type Task struct {
 	URL    string
 	Range  ByteRange
-	File   *os.File
+	Index  int
 	Client *http.Client
 }
 
-func fetchFromOffset(t Task, progress *tracker.Progress, offset *int64) error {
+type Chunk struct {
+	Index  int
+	Offset int64
+	Bytes  []byte
+}
+
+func fetchFromOffset(
+	t Task,
+	progress *tracker.Progress,
+	offset *int64,
+	chunks chan<- Chunk,
+) error {
 	req, err := http.NewRequest("GET", t.URL, nil)
 	if err != nil {
 		return err
@@ -44,13 +54,15 @@ func fetchFromOffset(t Task, progress *tracker.Progress, offset *int64) error {
 		n, err := resp.Body.Read(buf)
 
 		if n > 0 {
-			_, wErr := t.File.WriteAt(buf[:n], *offset)
-			if wErr != nil {
-				return wErr
+			data := append([]byte(nil), buf[:n]...)
+
+			chunks <- Chunk{
+				Index:  t.Index,
+				Offset: *offset,
+				Bytes:  data,
 			}
 
 			progress.AddDownloaded(int64(n))
-
 			*offset += int64(n)
 		}
 
@@ -66,25 +78,39 @@ func fetchFromOffset(t Task, progress *tracker.Progress, offset *int64) error {
 	return nil
 }
 
-func Worker(t Task, progress *tracker.Progress, maxRetries int) error {
-	if maxRetries <= -1 {
+func Worker(
+	t Task,
+	progress *tracker.Progress,
+	maxRetries int,
+	chunks chan<- Chunk,
+) error {
+	if maxRetries < 0 {
 		maxRetries = 4
 	}
 
 	offset := t.Range.Start
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
-		if attempt == maxRetries {
-			return fmt.Errorf("download failed after %d retries.", maxRetries)
-		}
-
-		err := fetchFromOffset(t, progress, &offset)
+		err := fetchFromOffset(
+			t,
+			progress,
+			&offset,
+			chunks,
+		)
 
 		if err == nil {
 			return nil
 		}
 
-		time.Sleep(time.Second * 3)
+		if attempt == maxRetries {
+			return fmt.Errorf(
+				"download failed after %d attempts: %w",
+				attempt+1,
+				err,
+			)
+		}
+
+		time.Sleep(3 * time.Second)
 	}
 
 	return nil

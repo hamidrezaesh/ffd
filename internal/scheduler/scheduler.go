@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"net/http"
-	"os"
 	"sync"
 
 	"github.com/hamidrezaesh/ffd/internal/tracker"
@@ -10,7 +9,6 @@ import (
 
 func Download(
 	url string,
-	file *os.File,
 	totalSize int64,
 	acceptRanges bool,
 	minFileSize int64,
@@ -19,16 +17,16 @@ func Download(
 	client *http.Client,
 	progress *tracker.Progress,
 	maxRetries int,
-) error {
+) (<-chan Chunk, <-chan error) {
 
-	var (
-		ranges map[int]ByteRange
-		wg     sync.WaitGroup
-		errCh  chan error
-		err    error
-	)
+	out := make(chan Chunk)
+	workerChunks := make(chan Chunk, maxWorkers*2)
+	errCh := make(chan error, 1)
 
-	// Decide ranges
+	var ranges map[int]ByteRange
+	var err error
+
+	// Decide ranges.
 	if !acceptRanges {
 		ranges = map[int]ByteRange{
 			1: {
@@ -37,49 +35,83 @@ func Download(
 			},
 		}
 	} else {
-		ranges, err = Split(totalSize, maxChunks, minFileSize)
+		ranges, err = Split(
+			totalSize,
+			maxChunks,
+			minFileSize,
+		)
 		if err != nil {
-			return err
+			close(out)
+			close(errCh)
+			errCh <- err
+			return out, errCh
 		}
 	}
 
-	errCh = make(chan error, len(ranges))
 	jobs := make(chan ByteRange)
 
-	for i := 0; i < maxWorkers; i++ {
-		wg.Add(1)
+	var workers sync.WaitGroup
+
+	// Start workers.
+	workerCount := maxWorkers
+
+	if workerCount > len(ranges) {
+		workerCount = len(ranges)
+	}
+
+	for i := 0; i < workerCount; i++ {
+		workers.Add(1)
 
 		go func() {
-			defer wg.Done()
+			defer workers.Done()
 
 			for job := range jobs {
 				t := Task{
 					URL:    url,
 					Range:  job,
-					File:   file,
+					Index:  i,
 					Client: client,
 				}
 
-				if workerErr := Worker(t, progress, maxRetries); workerErr != nil {
-					errCh <- workerErr
+				if workerErr := Worker(
+					t,
+					progress,
+					maxRetries,
+					workerChunks,
+				); workerErr != nil {
+					select {
+					case errCh <- workerErr:
+					default:
+					}
 				}
 			}
 		}()
 	}
 
-	for _, r := range ranges {
-		jobs <- r
-	}
+	// Send jobs.
+	go func() {
+		defer close(jobs)
 
-	close(jobs)
-	wg.Wait()
-	close(errCh)
-
-	for err := range errCh {
-		if err != nil {
-			return err
+		for _, r := range ranges {
+			jobs <- r
 		}
-	}
+	}()
 
-	return nil
+	// Wait for workers, then close their output.
+	go func() {
+		workers.Wait()
+		close(workerChunks)
+	}()
+
+	// Forward chunks.
+	go func() {
+		defer close(out)
+		defer close(errCh)
+
+		for chunk := range workerChunks {
+			out <- chunk
+		}
+	}()
+
+	return out, errCh
 }
