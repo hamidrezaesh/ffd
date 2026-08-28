@@ -49,13 +49,12 @@ func (s *Server) proxyAccelerated(
 	chunks, errors := scheduler.Download(
 		req.URL.String(),
 		totalSize,
-		true,
-		minFileSize,
-		maxWorkers,
-		maxChunks,
 		s.Client,
 		progress,
+		true,
 		maxRetries,
+		maxWorkers,
+		maxChunks,
 	)
 
 	// Copy upstream response metadata

@@ -107,13 +107,12 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int) (*Resu
 		chanChunks, chanErr := scheduler.Download(
 			req.URL,
 			md.TotalSize,
-			md.AcceptRanges,
-			5*1024*1024,
-			maxWorkers,
-			maxChunks,
 			client,
 			progress,
+			md.AcceptRanges,
 			maxRetries,
+			maxWorkers,
+			maxChunks,
 		)
 
 		for chanChunks != nil || chanErr != nil {
