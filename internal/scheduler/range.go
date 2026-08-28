@@ -5,20 +5,21 @@ type ByteRange struct {
 	End   int64
 }
 
-func Split(totalSize int64, chunks int, minFileSize int64) (map[int]ByteRange, error) {
+func Split(totalSize int64, startByte int64, chunks int, minFileSize int64) (map[int]ByteRange, error) {
 	ranges := make(map[int]ByteRange)
 
 	if totalSize <= minFileSize {
 		ranges[1] = ByteRange{
-			Start: 0,
+			Start: startByte,
 			End:   totalSize - 1,
 		}
 		return ranges, nil
 	}
 
-	base := totalSize / int64(chunks)
+	remaining := totalSize - startByte
+	base := remaining / int64(chunks)
 
-	start := int64(0)
+	start := startByte
 
 	for i := 1; i <= chunks; i++ {
 		end := start + base - 1
