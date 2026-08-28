@@ -4,8 +4,9 @@
 
 **Fast File Downloader**
 
-[![Version](https://img.shields.io/badge/version-v0.1.12-2CA5E0)](https://github.com/hamidrezaesh/ffd)
-[![Website](https://img.shields.io/badge/website-ffd--cli.pages.dev-111111)](https://ffd-cli.pages.dev)
+[v0.2.0](https://github.com/hamidrezaesh/ffd/releases)|
+[Website](https://ffd-cli.pages.dev)|
+[Issue](https://github.com/hamidrezaesh/ffd/issues)
 
 </div>
 
