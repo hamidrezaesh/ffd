@@ -25,6 +25,7 @@
 * Delayed downloads
 * Cross-platform Go implementation
 * Automatically distributes download chunks among workers for better performance.
+* Dynamic worker selection while downloading.
 
 ## Installation
 
