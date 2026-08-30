@@ -40,11 +40,11 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int) (*Resu
 	}
 
 	transport := &http.Transport{
-		MaxIdleConns:        16,
-		MaxIdleConnsPerHost: 16,
-		MaxConnsPerHost:     0,
+		MaxIdleConns:        128,
+		MaxIdleConnsPerHost: 64,
+		MaxConnsPerHost:     64,
 		IdleConnTimeout:     90 * time.Second,
-		ForceAttemptHTTP2:   false,
+		ForceAttemptHTTP2:   true,
 	}
 
 	client := &http.Client{
