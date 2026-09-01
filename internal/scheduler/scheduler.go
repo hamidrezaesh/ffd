@@ -208,7 +208,6 @@ func testWorkers(
 		maxTestSize,
 	)
 
-	// Make sure all tests fit inside the file.
 	if testSize*int64(len(testWorkerCounts)) > totalSize {
 		testSize = totalSize / int64(len(testWorkerCounts))
 	}
@@ -218,7 +217,6 @@ func testWorkers(
 	}
 
 	speeds := make([]float64, 0, len(testWorkerCounts))
-
 	startByte := int64(0)
 
 	for _, workerCount := range testWorkerCounts {
@@ -226,19 +224,30 @@ func testWorkers(
 			break
 		}
 
-		endByte := startByte + testSize - 1
-
-		if endByte >= totalSize {
-			endByte = totalSize - 1
+		testEnd := startByte + testSize
+		if testEnd > totalSize {
+			testEnd = totalSize
 		}
+
+		ranges, err := Split(
+			testEnd,
+			startByte,
+			1,
+			0,
+		)
+		if err != nil {
+			return 0, startByte, err
+		}
+
+		testRange := ranges[1]
 
 		testStart := time.Now()
 
 		chunks, errors := nWorkers(
 			url,
 			workerCount,
-			startByte,
-			endByte,
+			testRange.Start,
+			testRange.End,
 			client,
 			progress,
 		)
@@ -274,21 +283,19 @@ func testWorkers(
 		elapsed := time.Since(testStart).Seconds()
 
 		speed := float64(0)
-
 		if elapsed > 0 {
 			speed = float64(downloaded) / elapsed
 		}
 
 		speeds = append(speeds, speed)
 
-		startByte = endByte + 1
+		startByte = testRange.End + 1
 	}
 
 	if len(speeds) == 0 {
 		return 1, 0, nil
 	}
 
-	// Find fastest worker count.
 	bestIndex := 0
 
 	for i := 1; i < len(speeds); i++ {
@@ -299,6 +306,8 @@ func testWorkers(
 
 	return testWorkerCounts[bestIndex], startByte, nil
 }
+
+func testProtocol(url)
 
 /*
 After testing protocol and workers count, we use fetchRest to download rest of the file
