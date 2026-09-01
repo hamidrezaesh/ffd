@@ -11,6 +11,11 @@ import (
 	"github.com/hamidrezaesh/ffd/internal/tracker"
 )
 
+/*
+Scheduler is responsible for choose protocol, choose workers
+and download the actual file.
+*/
+
 func clamp(value, minValue, maxValue int64) int64 {
 	if value < minValue {
 		return minValue
@@ -22,6 +27,11 @@ func clamp(value, minValue, maxValue int64) int64 {
 
 	return value
 }
+
+/*
+nWorkers is responsible for downloading a part of file using input workers.
+it downloads the part and return downloaded bytes and speed.
+*/
 
 func nWorkers(
 	url string,
@@ -290,6 +300,11 @@ func testWorkers(
 	return testWorkerCounts[bestIndex], startByte, nil
 }
 
+/*
+After testing protocol and workers count, we use fetchRest to download rest of the file
+from the last downloaded byte
+*/
+
 func fetchRest(
 	url string,
 	totalSize int64,
@@ -404,6 +419,12 @@ func fetchRest(
 
 	return out, errCh
 }
+
+/*
+Download is the main component of scheduler. it tests protocol and workers using
+testWorkers and testProtocol, then download the rest of file using fetchRest.finally it
+returns the downloaded bytes and error (if exists)
+*/
 
 func Download(
 	url string,
