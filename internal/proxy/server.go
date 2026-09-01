@@ -7,8 +7,7 @@ import (
 )
 
 type Server struct {
-	Addr   string
-	Client *http.Client
+	Addr string
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -28,8 +27,7 @@ func Start(port int) {
 	}
 
 	server := &Server{
-		Addr:   fmt.Sprintf("127.0.0.1:%v", port),
-		Client: &http.Client{},
+		Addr: fmt.Sprintf("127.0.0.1:%v", port),
 	}
 
 	httpServer := &http.Server{

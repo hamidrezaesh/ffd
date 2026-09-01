@@ -408,7 +408,6 @@ func fetchRest(
 func Download(
 	url string,
 	totalSize int64,
-	client *http.Client,
 	progress *tracker.Progress,
 	acceptRange bool,
 	maxRetries int,
@@ -425,6 +424,18 @@ func Download(
 		if totalSize <= 0 {
 			errCh <- fmt.Errorf("invalid total size")
 			return
+		}
+
+		transport := &http.Transport{
+			MaxIdleConns:        128,
+			MaxIdleConnsPerHost: 64,
+			MaxConnsPerHost:     64,
+			IdleConnTimeout:     90 * time.Second,
+			ForceAttemptHTTP2:   true,
+		}
+
+		client := &http.Client{
+			Transport: transport,
 		}
 
 		if client == nil {

@@ -3,7 +3,6 @@ package engine
 import (
 	"net/http"
 	"path/filepath"
-	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/disk"
 	"github.com/hamidrezaesh/ffd/internal/metadata"
@@ -39,20 +38,8 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int) (*Resu
 		maxWorkers = maxChunks
 	}
 
-	transport := &http.Transport{
-		MaxIdleConns:        128,
-		MaxIdleConnsPerHost: 64,
-		MaxConnsPerHost:     64,
-		IdleConnTimeout:     90 * time.Second,
-		ForceAttemptHTTP2:   true,
-	}
-
-	client := &http.Client{
-		Transport: transport,
-	}
-
 	// Get response
-	resp, err := client.Head(req.URL)
+	resp, err := http.DefaultClient.Head(req.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +94,6 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int) (*Resu
 		chanChunks, chanErr := scheduler.Download(
 			req.URL,
 			md.TotalSize,
-			client,
 			progress,
 			md.AcceptRanges,
 			maxRetries,

@@ -22,7 +22,7 @@ func (s *Server) proxyNormal(
 	w http.ResponseWriter,
 	req *http.Request,
 ) {
-	resp, err := s.Client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
@@ -49,7 +49,6 @@ func (s *Server) proxyAccelerated(
 	chunks, errors := scheduler.Download(
 		req.URL.String(),
 		totalSize,
-		s.Client,
 		progress,
 		true,
 		maxRetries,

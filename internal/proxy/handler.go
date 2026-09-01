@@ -26,7 +26,7 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	headReq.Body = nil
 	headReq.ContentLength = 0
 
-	headResp, err := s.Client.Do(headReq)
+	headResp, err := http.DefaultClient.Do(headReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
