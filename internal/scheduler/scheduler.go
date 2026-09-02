@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -184,6 +185,7 @@ testWorkers test multiple workers' speed while downloading the file and return t
 func testWorkers(
 	url string,
 	totalSize int64,
+	startByte int64,
 	client *http.Client,
 	progress *tracker.Progress,
 	emit func(Chunk),
@@ -217,7 +219,6 @@ func testWorkers(
 	}
 
 	speeds := make([]float64, 0, len(testWorkerCounts))
-	startByte := int64(0)
 
 	for _, workerCount := range testWorkerCounts {
 		if startByte >= totalSize {
@@ -225,7 +226,8 @@ func testWorkers(
 		}
 
 		testEnd := startByte + testSize
-		if testEnd > totalSize {
+		switch {
+		case testEnd > totalSize:
 			testEnd = totalSize
 		}
 
@@ -307,7 +309,181 @@ func testWorkers(
 	return testWorkerCounts[bestIndex], startByte, nil
 }
 
-func testProtocol(url)
+/*
+newClient is responsible for creating an http client base on finalProtocol. it will use by Download
+to return best http client.
+*/
+
+func newClient(finalProtocol int) *http.Client {
+	transport := &http.Transport{
+		MaxIdleConns:        128,
+		MaxIdleConnsPerHost: 64,
+		MaxConnsPerHost:     64,
+		IdleConnTimeout:     90 * time.Second,
+	}
+
+	switch finalProtocol {
+	case 1: // HTTP/1.1
+		transport.TLSNextProto =
+			map[string]func(string, *tls.Conn) http.RoundTripper{}
+
+	case 2: // HTTP/2
+		transport.ForceAttemptHTTP2 = true
+	}
+
+	return &http.Client{
+		Transport: transport,
+	}
+}
+
+/*
+testProtocol is responsible to test HTTP/1 and HTTP/2 speed while downloading part of the file.
+it tests some bytes with these two protocols and return best protocol.
+it will return HTTP/2 if its at least ~5% faster than HTTP/1 else it will return HTTP/1
+*/
+
+func testProtocol(
+	url string,
+	totalSize int64,
+	startByte int64,
+	progress *tracker.Progress,
+	emit func(Chunk),
+) (int, int64, error) {
+	if totalSize <= 0 {
+		return 0, 0, fmt.Errorf("invalid total size")
+	}
+
+	const minTestSize int64 = 2 * 1024 * 1024
+	const maxTestSize int64 = 200 * 1024 * 1024
+
+	testProtocols := []int{
+		1,
+		2,
+	}
+
+	testSize := clamp(
+		totalSize/50,
+		minTestSize,
+		maxTestSize,
+	)
+
+	if testSize*int64(len(testProtocols)) > totalSize {
+		testSize = totalSize / int64(len(testProtocols))
+	}
+
+	if testSize <= 0 {
+		return 0, 0, nil
+	}
+
+	var speed1 float64
+	var speed2 float64
+
+	for _, protocol := range testProtocols {
+		if startByte >= totalSize {
+			break
+		}
+		testEnd := startByte + testSize
+		if testEnd > totalSize {
+			testEnd = totalSize
+		}
+
+		ranges, err := Split(
+			startByte,
+			testEnd-1,
+			1,
+			0,
+		)
+		if err != nil {
+			return 0, startByte, err
+		}
+
+		testRange := ranges[1]
+
+		transport := &http.Transport{
+			MaxIdleConns:        16,
+			MaxIdleConnsPerHost: 16,
+			MaxConnsPerHost:     16,
+		}
+
+		switch protocol {
+		case 1:
+			transport.TLSNextProto =
+				map[string]func(string, *tls.Conn) http.RoundTripper{}
+
+		case 2:
+			transport.ForceAttemptHTTP2 = true
+		}
+
+		client := &http.Client{
+			Transport: transport,
+		}
+
+		testStart := time.Now()
+
+		chunks, errors := nWorkers(
+			url,
+			8,
+			testRange.Start,
+			testRange.End,
+			client,
+			progress,
+		)
+
+		var downloaded int64
+
+		for chunks != nil || errors != nil {
+			select {
+			case chunk, ok := <-chunks:
+				if !ok {
+					chunks = nil
+					continue
+				}
+
+				downloaded += int64(len(chunk.Bytes))
+
+				if emit != nil {
+					emit(chunk)
+				}
+
+			case err, ok := <-errors:
+				if !ok {
+					errors = nil
+					continue
+				}
+
+				if err != nil {
+					return 0, startByte, err
+				}
+			}
+		}
+
+		elapsed := time.Since(testStart).Seconds()
+
+		speed := float64(0)
+		if elapsed > 0 {
+			speed = float64(downloaded) / elapsed
+		}
+
+		switch protocol {
+		case 1:
+			speed1 = speed
+		case 2:
+			speed2 = speed
+		}
+
+		startByte = testRange.End + 1
+	}
+
+	var finalProtocol int
+
+	if speed2 >= speed1*0.95 {
+		finalProtocol = 2
+	} else {
+		finalProtocol = 1
+	}
+
+	return finalProtocol, startByte, nil
+}
 
 /*
 After testing protocol and workers count, we use fetchRest to download rest of the file
@@ -345,8 +521,8 @@ func fetchRest(
 		}
 
 		ranges, err := Split(
-			totalSize,
 			startByte,
+			totalSize-1,
 			maxChunks,
 			minFileSize,
 		)
@@ -456,22 +632,6 @@ func Download(
 			return
 		}
 
-		transport := &http.Transport{
-			MaxIdleConns:        128,
-			MaxIdleConnsPerHost: 64,
-			MaxConnsPerHost:     64,
-			IdleConnTimeout:     90 * time.Second,
-			ForceAttemptHTTP2:   true,
-		}
-
-		client := &http.Client{
-			Transport: transport,
-		}
-
-		if client == nil {
-			client = http.DefaultClient
-		}
-
 		// if server does not support ranges.
 		if !acceptRange {
 			task := Task{
@@ -480,8 +640,16 @@ func Download(
 					Start: 0,
 					End:   totalSize - 1,
 				},
-				Index:  0,
-				Client: client,
+				Index: 0,
+				Client: &http.Client{
+					Transport: &http.Transport{
+						MaxIdleConns:        4,
+						MaxIdleConnsPerHost: 2,
+						MaxConnsPerHost:     2,
+						IdleConnTimeout:     90 * time.Second,
+						ForceAttemptHTTP2:   true,
+					},
+				},
 			}
 
 			workerChunks := make(chan Chunk)
@@ -511,11 +679,35 @@ func Download(
 
 		startByte := int64(0)
 
+		// detect best protocol
+		finalProtocol, nextByte, err := testProtocol(
+			url,
+			totalSize,
+			startByte,
+			progress,
+			func(chunk Chunk) {
+				out <- chunk
+			},
+		)
+		if err != nil {
+			errCh <- err
+			return
+		}
+
+		// make a client
+		client := newClient(finalProtocol)
+		if client == nil {
+			client = http.DefaultClient
+		}
+
+		startByte = nextByte
+
 		// Automatically determine worker count.
 		if maxWorkers <= 0 {
 			selectedWorkers, nextByte, err := testWorkers(
 				url,
 				totalSize,
+				startByte,
 				client,
 				progress,
 				func(chunk Chunk) {
