@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/tracker"
+	"github.com/quic-go/quic-go/http3"
 )
 
 /*
@@ -314,32 +315,50 @@ newClient is responsible for creating an http client base on finalProtocol. it w
 to return best http client.
 */
 
-func newClient(finalProtocol int) *http.Client {
-	transport := &http.Transport{
-		MaxIdleConns:        128,
-		MaxIdleConnsPerHost: 64,
-		MaxConnsPerHost:     64,
-		IdleConnTimeout:     90 * time.Second,
-	}
-
-	switch finalProtocol {
+func newClient(protocol int) *http.Client {
+	switch protocol {
 	case 1: // HTTP/1.1
-		transport.TLSNextProto =
-			map[string]func(string, *tls.Conn) http.RoundTripper{}
+		transport := &http.Transport{
+			MaxIdleConns:        128,
+			MaxIdleConnsPerHost: 64,
+			MaxConnsPerHost:     64,
+			IdleConnTimeout:     90 * time.Second,
+			TLSNextProto:        map[string]func(string, *tls.Conn) http.RoundTripper{},
+		}
+
+		return &http.Client{
+			Transport: transport,
+		}
 
 	case 2: // HTTP/2
-		transport.ForceAttemptHTTP2 = true
+		transport := &http.Transport{
+			MaxIdleConns:        128,
+			MaxIdleConnsPerHost: 64,
+			MaxConnsPerHost:     64,
+			IdleConnTimeout:     90 * time.Second,
+			ForceAttemptHTTP2:   true,
+		}
+
+		return &http.Client{
+			Transport: transport,
+		}
+
+	case 3: // HTTP/3
+		transport := &http3.Transport{}
+
+		return &http.Client{
+			Transport: transport,
+		}
 	}
 
-	return &http.Client{
-		Transport: transport,
-	}
+	return http.DefaultClient
 }
 
 /*
-testProtocol is responsible to test HTTP/1 and HTTP/2 speed while downloading part of the file.
-it tests some bytes with these two protocols and return best protocol.
-it will return HTTP/2 if its at least ~5% faster than HTTP/1 else it will return HTTP/1
+testProtocol is responsible for testing HTTP/1.1, HTTP/2 and HTTP/3 speeds while downloading parts of
+the file.
+it tests a portion of the file with each protocol and returns the preferred protocol.
+when speeds are within ~5% of each other, it prefers HTTP/3 over HTTP/2 and HTTP/2 over HTTP/1.1.
 */
 
 func testProtocol(
@@ -359,6 +378,7 @@ func testProtocol(
 	testProtocols := []int{
 		1,
 		2,
+		3,
 	}
 
 	testSize := clamp(
@@ -377,6 +397,7 @@ func testProtocol(
 
 	var speed1 float64
 	var speed2 float64
+	var speed3 float64
 
 	for _, protocol := range testProtocols {
 		if startByte >= totalSize {
@@ -405,17 +426,30 @@ func testProtocol(
 			MaxConnsPerHost:     16,
 		}
 
+		var client *http.Client
+
 		switch protocol {
 		case 1:
 			transport.TLSNextProto =
 				map[string]func(string, *tls.Conn) http.RoundTripper{}
 
+			client = &http.Client{
+				Transport: transport,
+			}
+
 		case 2:
 			transport.ForceAttemptHTTP2 = true
-		}
 
-		client := &http.Client{
-			Transport: transport,
+			client = &http.Client{
+				Transport: transport,
+			}
+
+		case 3:
+			h3Transport := &http3.Transport{}
+
+			client = &http.Client{
+				Transport: h3Transport,
+			}
 		}
 
 		testStart := time.Now()
@@ -469,6 +503,8 @@ func testProtocol(
 			speed1 = speed
 		case 2:
 			speed2 = speed
+		case 3:
+			speed3 = speed
 		}
 
 		startByte = testRange.End + 1
@@ -476,7 +512,9 @@ func testProtocol(
 
 	var finalProtocol int
 
-	if speed2 >= speed1*0.95 {
+	if speed3 >= speed2*0.95 {
+		finalProtocol = 3
+	} else if speed2 >= speed1*0.95 {
 		finalProtocol = 2
 	} else {
 		finalProtocol = 1
@@ -619,7 +657,7 @@ func Download(
 	maxRetries int,
 	maxWorkers int,
 	maxChunks int,
-	preferedProtocol int,
+	preferredProtocol int,
 ) (<-chan Chunk, <-chan error) {
 	out := make(chan Chunk)
 	errCh := make(chan error, 1)
@@ -682,7 +720,7 @@ func Download(
 		var protocol int
 
 		// detect best protocol if it isn't specified by user
-		if preferedProtocol >= 0 {
+		if preferredProtocol < 0 {
 			finalProtocol, nextByte, err := testProtocol(
 				url,
 				totalSize,
@@ -700,7 +738,7 @@ func Download(
 			startByte = nextByte
 			protocol = finalProtocol
 		} else {
-			protocol = preferedProtocol
+			protocol = preferredProtocol
 		}
 
 		// make a client
