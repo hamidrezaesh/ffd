@@ -4,7 +4,7 @@
 
 **Fast File Downloader**
 
-[v0.2.0](https://github.com/hamidrezaesh/ffd/releases)|
+[v0.3.0](https://github.com/hamidrezaesh/ffd/releases)|
 [Website](https://ffd-cli.pages.dev)|
 [Issue](https://github.com/hamidrezaesh/ffd/issues)
 
