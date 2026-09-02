@@ -24,7 +24,7 @@ type Result struct {
 	Done     chan error
 }
 
-func Download(req Request, maxRetries int, maxWorkers int, maxChunks int) (*Result, error) {
+func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, preferredProtocol int) (*Result, error) {
 	if maxRetries == 0 {
 		maxRetries = 4
 	}
@@ -99,6 +99,7 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int) (*Resu
 			maxRetries,
 			maxWorkers,
 			maxChunks,
+			preferredProtocol,
 		)
 
 		for chanChunks != nil || chanErr != nil {
