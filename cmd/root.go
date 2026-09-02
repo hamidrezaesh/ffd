@@ -38,6 +38,9 @@ Example: ffd <URL> -W 10
 
 -c --max-chunks NUMBER_OF_CHUNKS Total parts of download (default 12)
 Example: ffd <URL> -c 20
+
+--protocol PROTOCOL	Protocol to use for download (default 'auto')
+Example: ffd <URL> --protocol http2
 `
 
 var proxyHelp string = `usage: ffd proxy [OPTION]
@@ -58,6 +61,7 @@ var (
 	maxWorkers int
 	maxChunks  int
 	port       int
+	protocol   string
 )
 
 var rootCmd = &cobra.Command{
@@ -91,10 +95,22 @@ var rootCmd = &cobra.Command{
 			Filename: output,
 		}
 
+		var useProtocol int
+		switch protocol {
+		case "auto":
+			useProtocol = 0
+		case "http1":
+			useProtocol = 1
+		case "http2":
+			useProtocol = 2
+		case "http3":
+			useProtocol = 3
+		}
+
 		startTime := time.Now()
 
 		// Start download.
-		result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks)
+		result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks, useProtocol)
 
 		if err != nil {
 			fmt.Printf(
@@ -180,7 +196,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&maxRetries, "max-retries", "r", 4, "Total retries after connection failed")
 	rootCmd.Flags().IntVarP(&maxWorkers, "max-workers", "W", 8, "Total concurrent workers")
 	rootCmd.Flags().IntVarP(&maxChunks, "max-chunks", "c", 12, "Total parts of download")
-
+	rootCmd.Flags().StringVarP(&protocol, "protocol", "", "auto", "Protocol to use")
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		fmt.Println(commandsHelp)
 	})
