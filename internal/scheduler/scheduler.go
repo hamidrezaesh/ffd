@@ -619,6 +619,7 @@ func Download(
 	maxRetries int,
 	maxWorkers int,
 	maxChunks int,
+	preferedProtocol int,
 ) (<-chan Chunk, <-chan error) {
 	out := make(chan Chunk)
 	errCh := make(chan error, 1)
@@ -678,29 +679,35 @@ func Download(
 		}
 
 		startByte := int64(0)
+		var protocol int
 
-		// detect best protocol
-		finalProtocol, nextByte, err := testProtocol(
-			url,
-			totalSize,
-			startByte,
-			progress,
-			func(chunk Chunk) {
-				out <- chunk
-			},
-		)
-		if err != nil {
-			errCh <- err
-			return
+		// detect best protocol if it isn't specified by user
+		if preferedProtocol >= 0 {
+			finalProtocol, nextByte, err := testProtocol(
+				url,
+				totalSize,
+				startByte,
+				progress,
+				func(chunk Chunk) {
+					out <- chunk
+				},
+			)
+			if err != nil {
+				errCh <- err
+				return
+			}
+
+			startByte = nextByte
+			protocol = finalProtocol
+		} else {
+			protocol = preferedProtocol
 		}
 
 		// make a client
-		client := newClient(finalProtocol)
+		client := newClient(protocol)
 		if client == nil {
 			client = http.DefaultClient
 		}
-
-		startByte = nextByte
 
 		// Automatically determine worker count.
 		if maxWorkers <= 0 {
