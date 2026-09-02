@@ -720,7 +720,7 @@ func Download(
 		var protocol int
 
 		// detect best protocol if it isn't specified by user
-		if preferredProtocol < 0 {
+		if preferredProtocol == 0 {
 			finalProtocol, nextByte, err := testProtocol(
 				url,
 				totalSize,
