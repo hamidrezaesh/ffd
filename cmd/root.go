@@ -1,8 +1,13 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/engine"
@@ -17,8 +22,13 @@ Commands:
 proxy              Start the ffd forward proxy
 Example: ffd proxy
 
+update             Update ffd to the latest version
+Example: ffd update
+
 Startup:
 -h, --help	Show help
+
+-v, --version	Show ffd version
 
 Options:
 -o, --output NAME	Save the file with a custom filename
@@ -36,7 +46,7 @@ Example: ffd <URL> -r 10
 -W --max-workers NUMBER_OF_WORKERS	Total concurrent workers (default 8)
 Example: ffd <URL> -W 10
 
--c --max-chunks NUMBER_OF_CHUNKS Total parts of download (default 12)
+-c --max-chunks NUMBER_OF_CHUNKS	Total parts of download (default 12)
 Example: ffd <URL> -c 20
 
 --protocol PROTOCOL	Protocol to use for download (default 'auto')
@@ -64,10 +74,123 @@ var (
 	protocol   string
 )
 
+func downloadUrl(req engine.Request) error {
+	var useProtocol int
+	switch protocol {
+	case "auto":
+		useProtocol = 0
+	case "http1":
+		useProtocol = 1
+	case "http2":
+		useProtocol = 2
+	case "http3":
+		useProtocol = 3
+	}
+
+	startTime := time.Now()
+
+	// Start download.
+	result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks, useProtocol)
+
+	if err != nil {
+		fmt.Printf(
+			"\r\033[KDownload failed: %v\n",
+			err,
+		)
+
+		return err
+	}
+
+	fmt.Println("Downloading...")
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	first := true
+	for {
+		select {
+		case <-ticker.C:
+			progress := result.Progress.Info()
+			if first {
+				fmt.Printf(
+					"%s\t%.2f%%\n%s left - %s / %s | %s/s",
+					result.Filename,
+					progress.Percent,
+					progress.TimeLeft,
+					formatter.Bytes(progress.Downloaded),
+					formatter.Bytes(progress.Total),
+					formatter.Bytes(progress.Speed),
+				)
+				first = false
+				continue
+			}
+
+			fmt.Printf(
+				"\033[1A\r\033[K%s\t%.2f%%\n\033[K%s left - %s / %s | %s/s",
+				result.Filename,
+				progress.Percent,
+				progress.TimeLeft,
+				formatter.Bytes(progress.Downloaded),
+				formatter.Bytes(progress.Total),
+				formatter.Bytes(progress.Speed),
+			)
+		case err := <-result.Done:
+			if err != nil {
+				fmt.Printf(
+					"\n\033[KDownload failed: %v\n",
+					err,
+				)
+				return err
+			}
+
+			duration := time.Since(startTime).Round(time.Second)
+
+			fmt.Printf(
+				"\033[1A\r\033[K%s - 100%%\n\033[KDownload completed in %s\n",
+				result.Filename,
+				duration,
+			)
+			return nil
+		}
+	}
+}
+
+type Release struct {
+	TagName string `json:"tag_name"`
+}
+
+func GetLatestVersion() (string, error) {
+	url := "https://api.github.com/repos/hamidrezaesh/ffd/releases/latest"
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("GitHub API returned %s", resp.Status)
+	}
+
+	var release Release
+
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return "", err
+	}
+
+	return release.TagName, nil
+}
+
 var rootCmd = &cobra.Command{
-	Use:   "ffd [URL] [OPTIONS]",
-	Short: "Fast, multi-segment data fetcher",
-	Args:  cobra.ArbitraryArgs,
+	Use:     "ffd [URL] [OPTIONS]",
+	Short:   "Fast, multi-segment data fetcher",
+	Version: version,
+	Args:    cobra.ArbitraryArgs,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
@@ -89,85 +212,16 @@ var rootCmd = &cobra.Command{
 			fmt.Print("\r\033[K")
 		}
 
-		req := engine.Request{
-			URL:      args[0],
-			Path:     path,
-			Filename: output,
-		}
+		for _, url := range args {
+			req := engine.Request{
+				URL:      url,
+				Path:     path,
+				Filename: output,
+			}
 
-		var useProtocol int
-		switch protocol {
-		case "auto":
-			useProtocol = 0
-		case "http1":
-			useProtocol = 1
-		case "http2":
-			useProtocol = 2
-		case "http3":
-			useProtocol = 3
-		}
-
-		startTime := time.Now()
-
-		// Start download.
-		result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks, useProtocol)
-
-		if err != nil {
-			fmt.Printf(
-				"\r\033[KDownload failed: %v\n",
-				err,
-			)
-
-			return
-		}
-
-		fmt.Println("Downloading...")
-		ticker := time.NewTicker(time.Second)
-		defer ticker.Stop()
-		first := true
-		for {
-			select {
-			case <-ticker.C:
-				progress := result.Progress.Info()
-				if first {
-					fmt.Printf(
-						"%s\t%.2f%%\n%s left - %s / %s | %s/s",
-						result.Filename,
-						progress.Percent,
-						progress.TimeLeft,
-						formatter.Bytes(progress.Downloaded),
-						formatter.Bytes(progress.Total),
-						formatter.Bytes(progress.Speed),
-					)
-					first = false
-					continue
-				}
-
-				fmt.Printf(
-					"\033[1A\r\033[K%s\t%.2f%%\n\033[K%s left - %s / %s | %s/s",
-					result.Filename,
-					progress.Percent,
-					progress.TimeLeft,
-					formatter.Bytes(progress.Downloaded),
-					formatter.Bytes(progress.Total),
-					formatter.Bytes(progress.Speed),
-				)
-			case err := <-result.Done:
-				if err != nil {
-					fmt.Printf(
-						"\n\033[KDownload failed: %v\n",
-						err,
-					)
-					return
-				}
-
-				duration := time.Since(startTime).Round(time.Second)
-
-				fmt.Printf(
-					"\033[1A\r\033[K%s - 100%%\n\033[KDownload completed in %s\n",
-					result.Filename,
-					duration,
-				)
+			err := downloadUrl(req)
+			if err != nil {
+				fmt.Printf("Error downloading: %v\n", err)
 				return
 			}
 		}
@@ -179,6 +233,54 @@ var proxyCmd = &cobra.Command{
 	Short: "Start the ffd forward proxy",
 	Run: func(cmd *cobra.Command, args []string) {
 		proxy.Start(port)
+	},
+}
+
+var updateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Update ffd",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			// detecting os
+			log.Print("Detecting OS...")
+			os := runtime.GOOS
+			log.Printf("OS: %v\n", os)
+
+			// checking version
+			latestVersion, err := GetLatestVersion()
+			if err != nil {
+				log.Fatal(err)
+			}
+			if latestVersion == version {
+				log.Printf("ffd is up to date (%v)\n", version)
+				return
+			}
+
+			log.Printf("updating to the latest version (%v)...\n", latestVersion)
+
+			var cmd *exec.Cmd
+
+			if os == "windows" {
+				cmd = exec.Command(
+					"powershell",
+					"-Command",
+					"Set-ExecutionPolicy -Scope CurrentUser RemoteSigned; irm https://raw.githubusercontent.com/hamidrezaesh/ffd/main/scripts/install.ps1 | iex",
+				)
+			} else if os == "linux" || os == "darwin" {
+				cmd = exec.Command(
+					"sh",
+					"-c",
+					"curl -fsSL https://raw.githubusercontent.com/hamidrezaesh/ffd/main/scripts/install.sh | sh",
+				)
+			} else {
+				log.Fatalf("Unsupported OS: %v", runtime.GOOS)
+			}
+
+			err = cmd.Run()
+			if err != nil {
+				log.Fatalf("Error while updating ffd: %v\n", err)
+			}
+		}
 	},
 }
 
@@ -208,4 +310,5 @@ func init() {
 	})
 
 	rootCmd.AddCommand(proxyCmd)
+	rootCmd.AddCommand(updateCmd)
 }
