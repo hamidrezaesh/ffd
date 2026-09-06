@@ -3,6 +3,8 @@ version: 2
 builds:
   - main: .
     binary: ffd
+    ldflags:
+      - -X github.com/hamidrezaesh/ffd/cmd.version={{.Version}}
     goos:
       - linux
       - windows
