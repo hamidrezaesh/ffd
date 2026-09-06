@@ -103,6 +103,7 @@ ffd/
 ├── .gitignore
 ├── .goreleaser.yaml
 ├── main.go
+├── CONTRIBUTING.md
 ├── go.mod
 ├── go.sum
 ├── README.md

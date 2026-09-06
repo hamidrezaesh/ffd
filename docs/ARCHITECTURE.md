@@ -21,6 +21,7 @@ ffd/
 ├── .goreleaser.yaml
 ├── main.go
 ├── go.mod
+├── CONTRIBUTING.md
 ├── go.sum
 ├── README.md
 └── LICENSE
