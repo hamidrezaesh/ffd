@@ -9,6 +9,7 @@ import (
 )
 
 func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[proxy] %s %s", r.Method, r.URL.String())
 	outReq := r.Clone(r.Context())
 	outReq.RequestURI = ""
 
@@ -55,6 +56,7 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[proxy] %s %s", r.Method, r.Host)
 	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {
 		http.Error(w, "Failed to connect to destination", http.StatusServiceUnavailable)
