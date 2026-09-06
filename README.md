@@ -4,7 +4,7 @@
 
 **Fast File Downloader**
 
-[v0.3.0](https://github.com/hamidrezaesh/ffd/releases)|
+[v0.3.1](https://github.com/hamidrezaesh/ffd/releases)|
 [Website](https://ffd-cli.pages.dev)|
 [Issue](https://github.com/hamidrezaesh/ffd/issues)
 
@@ -29,86 +29,20 @@
 
 ## Installation
 
-### Quick Install
-#### Linux/Mac
-install the latest release with a single command:
+**Linux / macOS**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hamidrezaesh/ffd/main/scripts/install.sh | sh
 ```
 
-Verify the installation:
-```bash
-ffd --help
-```
+**Windows**
 
-#### Windows
-
-If PowerShell blocks script execution, enable local scripts first:
-
-```bash
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-```
-
-Then install the latest release:
-
-```bash
+```powershell
 irm https://raw.githubusercontent.com/hamidrezaesh/ffd/main/scripts/install.ps1 | iex
 ```
 
-Verify the installation:
+For detailed instructions and alternative installation methods, see **[docs/INSTALLATION.md](docs/INSTALLATION.md)**.
 
-```bash
-ffd --help
-```
-
-### Download a Release
-
-Download the latest version of ffd from the [Releases page](https://github.com/hamidrezaesh/ffd/releases) or [official website](https://ffd-cli.pages.dev/install#:~:text=Install%20from%20Release).
-
-#### Linux / macOS
-
-Extract the downloaded archive:
-
-```bash
-tar -xzf ffd_*.tar.gz
-```
-
-Then install the binary:
-
-```bash
-sudo install -m 755 ffd /usr/local/bin/ffd
-```
-
-Verify the installation:
-
-```bash
-ffd --help
-```
-
-#### Windows
-Download the appropriate .zip archive from the Releases page.
-Extract ffd.exe.
-Add its directory to your PATH.
-
-Then run:
-
-```bash
-ffd --help
-```
-
-### From source
-
-Make sure you have Go installed, then clone the repository:
-
-```bash
-git clone https://github.com/hamidrezaesh/ffd.git && cd ffd
-```
-
-Build the binary:
-
-```bash
-go build -o ffd
-```
 
 ## Usage
 ### Download a file
@@ -141,6 +75,8 @@ Then configure your browser or another HTTP client to use:
 HTTP Proxy: 127.0.0.1:8000  
 HTTPS Proxy: 127.0.0.1:8000
 
+For detailed information about using ffd, including commands, options, and examples, see **[docs/USAGE.md](docs/USAGE.md)**.
+
 ## How it works
 
 When the server supports HTTP byte-range requests, `ffd` divides the file into multiple ranges and downloads them concurrently.
@@ -151,6 +87,8 @@ If the server does not support range requests, `ffd` automatically falls back to
 
 ```text
 ffd/
+├── .github/
+|   ├── workflows/
 ├── cmd/
 ├── internal/
 │   ├── disk/
@@ -161,12 +99,17 @@ ffd/
 │   ├── scheduler/
 │   ├── tracker/
 │   └── validator/
+├── scripts/
+├── .gitignore
+├── .goreleaser.yaml
 ├── main.go
 ├── go.mod
 ├── go.sum
 ├── README.md
 └── LICENSE
 ```
+
+For detailed information about the project structure, packages, files, and how ffd works internally, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ## Requirements
 
