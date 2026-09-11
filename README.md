@@ -118,7 +118,7 @@ For detailed information about the project structure, packages, files, and how f
 
 ## License
 
-`ffd` is licensed under the MIT License.
+`ffd` is licensed under the Apache 2.0 License.
 
 See [LICENSE](./LICENSE) for the full license text.
 
