@@ -355,6 +355,30 @@ func newClient(protocol int) *http.Client {
 }
 
 /*
+checkAvailableProtocol checks whether the server accepts a download
+request using the specified HTTP protocol.
+
+It returns true if the request succeeds and false if it fails.
+*/
+
+func checkAvailableProtocol(url string, client *http.Client) bool {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return false
+	}
+
+	req.Header.Set("Range", "bytes=0-0")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusPartialContent
+}
+
+/*
 testProtocol is responsible for testing HTTP/1.1, HTTP/2 and HTTP/3 speeds while downloading parts of
 the file.
 it tests a portion of the file with each protocol and returns the preferred protocol.
@@ -395,9 +419,9 @@ func testProtocol(
 		return 0, 0, nil
 	}
 
-	var speed1 float64
-	var speed2 float64
-	var speed3 float64
+	var speed1 float64 = 0.0
+	var speed2 float64 = 0.0
+	var speed3 float64 = 0.0
 
 	for _, protocol := range testProtocols {
 		if startByte >= totalSize {
@@ -449,7 +473,13 @@ func testProtocol(
 
 			client = &http.Client{
 				Transport: h3Transport,
+				Timeout:   200 * time.Millisecond,
 			}
+		}
+
+		supported := checkAvailableProtocol(url, client)
+		if !supported {
+			continue
 		}
 
 		testStart := time.Now()
