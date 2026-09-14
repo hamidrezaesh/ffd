@@ -1,86 +1,14 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
-	"runtime"
 	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/engine"
 	"github.com/hamidrezaesh/ffd/internal/formatter"
-	"github.com/hamidrezaesh/ffd/internal/proxy"
 	"github.com/spf13/cobra"
-)
-
-var commandsHelp string = `usage: ffd [URL]...[OPTION]
-
-Commands:
-proxy              Start the ffd forward proxy
-Example: ffd proxy
-
-update             Update ffd to the latest version
-Example: ffd update
-
-Startup:
--h, --help	Show help
-
--v, --version	Show ffd version
-
-Options:
--o, --output NAME	Save the file with a custom filename
-Example: ffd <URL> -o my-file
-
--w, --wait SECONDS	Wait before starting the download
-Example: ffd <URL> -w 100
-
--p, --path PATH	save the file to a custom directory (default .)
-Example: ffd <URL> -p /path/to/your/folder
-
--r --max-retries NUMBER_OF_RETRIES	Total retries after connection failed (default 4)
-Example: ffd <URL> -r 10
-
--W --max-workers NUMBER_OF_WORKERS	Total concurrent workers (default 8)
-Example: ffd <URL> -W 10
-
--c --max-chunks NUMBER_OF_CHUNKS	Total parts of download (default 12)
-Example: ffd <URL> -c 20
-
---protocol PROTOCOL	Protocol to use for download (default 'auto')
-Example: ffd <URL> --protocol http2
-
---set-proxy PROXY    Set proxy server for download
-Example: ffd <URL> --set-proxy your-proxy
-`
-
-var proxyHelp string = `usage: ffd proxy [OPTION]
-
-Startup:
--h, --help        Show help
-
-Options:
---port PORT   Port to run the proxy on (default 8000)
-Example: ffd proxy --port 9000
-
---set-proxy PROXY    Set upstream proxy for ffd proxy
-Example: ffd proxy --set-proxy your-proxy
-`
-
-var (
-	output                    string
-	wait                      int
-	path                      string
-	maxRetries                int
-	maxWorkers                int
-	maxChunks                 int
-	port                      int
-	protocol                  string
-	downloadProxyServerString string
-	upstreamProxyServerString string
 )
 
 func downloadUrl(req engine.Request) error {
@@ -178,39 +106,6 @@ func downloadUrl(req engine.Request) error {
 	}
 }
 
-type Release struct {
-	TagName string `json:"tag_name"`
-}
-
-func GetLatestVersion() (string, error) {
-	url := "https://api.github.com/repos/hamidrezaesh/ffd/releases/latest"
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return "", err
-	}
-
-	req.Header.Set("Accept", "application/vnd.github+json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GitHub API returned %s", resp.Status)
-	}
-
-	var release Release
-
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", err
-	}
-
-	return release.TagName, nil
-}
-
 var rootCmd = &cobra.Command{
 	Use:     "ffd [URL] [OPTIONS]",
 	Short:   "Fast, multi-segment data fetcher",
@@ -248,74 +143,6 @@ var rootCmd = &cobra.Command{
 			if err != nil {
 				fmt.Printf("Error downloading: %v\n", err)
 				return
-			}
-		}
-	},
-}
-
-var proxyCmd = &cobra.Command{
-	Use:   "proxy",
-	Short: "Start the ffd forward proxy",
-	Run: func(cmd *cobra.Command, args []string) {
-		var proxyServer *url.URL
-		var err error
-		if upstreamProxyServerString != "" {
-			proxyServer, err = url.Parse(upstreamProxyServerString)
-			if err != nil {
-				fmt.Printf(
-					"\r\033[KFailed: %v\n",
-					err,
-				)
-				return
-			}
-		}
-		proxy.Start(port, proxyServer)
-	},
-}
-
-var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Update ffd",
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			// detecting os
-			log.Print("Detecting OS...")
-			os := runtime.GOOS
-			log.Printf("OS: %v\n", os)
-
-			// checking version
-			latestVersion, err := GetLatestVersion()
-			if err != nil {
-				log.Fatal(err)
-			}
-			if latestVersion == version {
-				log.Printf("ffd is up to date (%v)\n", version)
-				return
-			}
-
-			log.Printf("updating to the latest version (%v)...\n", latestVersion)
-
-			var cmd *exec.Cmd
-
-			if os == "windows" {
-				cmd = exec.Command(
-					"powershell",
-					"-Command",
-					"Set-ExecutionPolicy -Scope CurrentUser RemoteSigned; irm https://raw.githubusercontent.com/hamidrezaesh/ffd/main/scripts/install.ps1 | iex",
-				)
-			} else if os == "linux" || os == "darwin" {
-				cmd = exec.Command(
-					"sh",
-					"-c",
-					"curl -fsSL https://raw.githubusercontent.com/hamidrezaesh/ffd/main/scripts/install.sh | sh",
-				)
-			} else {
-				log.Fatalf("Unsupported OS: %v", runtime.GOOS)
-			}
-
-			err = cmd.Run()
-			if err != nil {
-				log.Fatalf("Error while updating ffd: %v\n", err)
 			}
 		}
 	},
