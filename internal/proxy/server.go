@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 type Server struct {
-	Addr string
+	Addr  string
+	Proxy *url.URL
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +21,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.handleRequest(w, r)
 }
 
-func Start(port int) {
+func Start(port int, proxyServer *url.URL) {
 	// set port to default port if not exists
 	defaultPort := 8000
 	if port == 0 {
@@ -27,7 +29,8 @@ func Start(port int) {
 	}
 
 	server := &Server{
-		Addr: fmt.Sprintf("127.0.0.1:%v", port),
+		Addr:  fmt.Sprintf("127.0.0.1:%v", port),
+		Proxy: proxyServer,
 	}
 
 	httpServer := &http.Server{

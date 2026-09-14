@@ -3,6 +3,7 @@ package scheduler
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -143,6 +144,7 @@ returns the downloaded bytes and error (if exists)
 func Download(
 	url string,
 	totalSize int64,
+	proxyServer *url.URL,
 	progress *tracker.Progress,
 	acceptRange bool,
 	maxRetries int,
@@ -178,6 +180,7 @@ func Download(
 						MaxConnsPerHost:     2,
 						IdleConnTimeout:     90 * time.Second,
 						ForceAttemptHTTP2:   true,
+						Proxy:               http.ProxyURL(proxyServer),
 					},
 				},
 			}
@@ -214,6 +217,7 @@ func Download(
 		if preferredProtocol == 0 {
 			finalProtocol, nextByte, err := testProtocol(
 				url,
+				proxyServer,
 				totalSize,
 				startByte,
 				progress,
@@ -233,7 +237,7 @@ func Download(
 		}
 
 		// make a client
-		client := newClient(protocol)
+		client := newClient(protocol, proxyServer)
 		if client == nil {
 			client = http.DefaultClient
 		}

@@ -3,6 +3,7 @@ package scheduler
 import (
 	"crypto/tls"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/quic-go/quic-go/http3"
@@ -13,7 +14,7 @@ newClient is responsible for creating an http client base on finalProtocol. it w
 to return best http client.
 */
 
-func newClient(protocol int) *http.Client {
+func newClient(protocol int, proxyServer *url.URL) *http.Client {
 	switch protocol {
 	case 1: // HTTP/1.1
 		transport := &http.Transport{
@@ -24,9 +25,11 @@ func newClient(protocol int) *http.Client {
 			TLSNextProto:        map[string]func(string, *tls.Conn) http.RoundTripper{},
 		}
 
-		return &http.Client{
-			Transport: transport,
+		if proxyServer != nil {
+			transport.Proxy = http.ProxyURL(proxyServer)
 		}
+
+		return &http.Client{Transport: transport}
 
 	case 2: // HTTP/2
 		transport := &http.Transport{
@@ -37,16 +40,16 @@ func newClient(protocol int) *http.Client {
 			ForceAttemptHTTP2:   true,
 		}
 
-		return &http.Client{
-			Transport: transport,
+		if proxyServer != nil {
+			transport.Proxy = http.ProxyURL(proxyServer)
 		}
+
+		return &http.Client{Transport: transport}
 
 	case 3: // HTTP/3
 		transport := &http3.Transport{}
 
-		return &http.Client{
-			Transport: transport,
-		}
+		return &http.Client{Transport: transport}
 	}
 
 	return http.DefaultClient

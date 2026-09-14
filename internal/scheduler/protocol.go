@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/tracker"
@@ -43,6 +44,7 @@ when speeds are within ~5% of each other, it prefers HTTP/3 over HTTP/2 and HTTP
 
 func testProtocol(
 	url string,
+	proxyServer *url.URL,
 	totalSize int64,
 	startByte int64,
 	progress *tracker.Progress,
@@ -131,6 +133,10 @@ func testProtocol(
 				Transport: h3Transport,
 				Timeout:   200 * time.Millisecond,
 			}
+		}
+
+		if proxyServer != nil {
+			transport.Proxy = http.ProxyURL(proxyServer)
 		}
 
 		supported := checkAvailableProtocol(url, client)

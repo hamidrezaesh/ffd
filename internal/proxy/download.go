@@ -49,6 +49,7 @@ func (s *Server) proxyAccelerated(
 	chunks, errors := scheduler.Download(
 		req.URL.String(),
 		totalSize,
+		s.Proxy,
 		progress,
 		true,
 		maxRetries,

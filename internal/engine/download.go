@@ -2,6 +2,7 @@ package engine
 
 import (
 	"net/http"
+	"net/url"
 	"path/filepath"
 
 	"github.com/hamidrezaesh/ffd/internal/disk"
@@ -24,7 +25,7 @@ type Result struct {
 	Done     chan error
 }
 
-func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, preferredProtocol int) (*Result, error) {
+func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, preferredProtocol int, proxyServer *url.URL) (*Result, error) {
 	if maxRetries == 0 {
 		maxRetries = 4
 	}
@@ -94,6 +95,7 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, prefer
 		chanChunks, chanErr := scheduler.Download(
 			req.URL,
 			md.TotalSize,
+			proxyServer,
 			progress,
 			md.AcceptRanges,
 			maxRetries,

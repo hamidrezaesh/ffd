@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -51,6 +52,9 @@ Example: ffd <URL> -c 20
 
 --protocol PROTOCOL	Protocol to use for download (default 'auto')
 Example: ffd <URL> --protocol http2
+
+--set-proxy PROXY    Set proxy server for download
+Example: ffd <URL> --set-proxy your-proxy
 `
 
 var proxyHelp string = `usage: ffd proxy [OPTION]
@@ -61,17 +65,22 @@ Startup:
 Options:
 --port PORT   Port to run the proxy on (default 8000)
 Example: ffd proxy --port 9000
+
+--set-proxy PROXY    Set upstream proxy for ffd proxy
+Example: ffd proxy --set-proxy your-proxy
 `
 
 var (
-	output     string
-	wait       int
-	path       string
-	maxRetries int
-	maxWorkers int
-	maxChunks  int
-	port       int
-	protocol   string
+	output                    string
+	wait                      int
+	path                      string
+	maxRetries                int
+	maxWorkers                int
+	maxChunks                 int
+	port                      int
+	protocol                  string
+	downloadProxyServerString string
+	upstreamProxyServerString string
 )
 
 func downloadUrl(req engine.Request) error {
@@ -85,12 +94,28 @@ func downloadUrl(req engine.Request) error {
 		useProtocol = 2
 	case "http3":
 		useProtocol = 3
+	default:
+		return fmt.Errorf("unsupported protocol: %s", protocol)
+	}
+
+	// get proxy server
+	var proxyServer *url.URL
+	var err error
+	if downloadProxyServerString != "" {
+		proxyServer, err = url.Parse(downloadProxyServerString)
+		if err != nil {
+			fmt.Printf(
+				"\r\033[KDownload failed: %v\n",
+				err,
+			)
+			return err
+		}
 	}
 
 	startTime := time.Now()
 
 	// Start download.
-	result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks, useProtocol)
+	result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks, useProtocol, proxyServer)
 
 	if err != nil {
 		fmt.Printf(
@@ -232,7 +257,19 @@ var proxyCmd = &cobra.Command{
 	Use:   "proxy",
 	Short: "Start the ffd forward proxy",
 	Run: func(cmd *cobra.Command, args []string) {
-		proxy.Start(port)
+		var proxyServer *url.URL
+		var err error
+		if upstreamProxyServerString != "" {
+			proxyServer, err = url.Parse(upstreamProxyServerString)
+			if err != nil {
+				fmt.Printf(
+					"\r\033[KFailed: %v\n",
+					err,
+				)
+				return
+			}
+		}
+		proxy.Start(port, proxyServer)
 	},
 }
 
@@ -299,11 +336,13 @@ func init() {
 	rootCmd.Flags().IntVarP(&maxWorkers, "max-workers", "W", 8, "Total concurrent workers")
 	rootCmd.Flags().IntVarP(&maxChunks, "max-chunks", "c", 12, "Total parts of download")
 	rootCmd.Flags().StringVarP(&protocol, "protocol", "", "auto", "Protocol to use")
+	rootCmd.Flags().StringVar(&downloadProxyServerString, "set-proxy", "", "Set proxy server")
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		fmt.Println(commandsHelp)
 	})
 
 	proxyCmd.Flags().IntVarP(&port, "port", "", 8000, "Port of the proxy")
+	proxyCmd.Flags().StringVar(&upstreamProxyServerString, "set-proxy", "", "Set upstream proxy server")
 
 	proxyCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		fmt.Println(proxyHelp)
