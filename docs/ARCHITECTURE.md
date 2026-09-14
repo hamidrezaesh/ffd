@@ -39,7 +39,7 @@ It starts the Cobra CLI by calling the root command.
 
 Contains the CLI commands and their configuration.
 
-### `cmd/root.go`
+### `cmd/*`
 
 Defines the main `ffd` command.
 

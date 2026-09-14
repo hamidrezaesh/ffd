@@ -26,6 +26,7 @@
 * Cross-platform Go implementation
 * Automatically distributes download chunks among workers for better performance.
 * Dynamic worker selection while downloading.
+* Built-in proxy — Use FFD as a local HTTP forward proxy.
 
 ## Installation
 
