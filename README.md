@@ -101,6 +101,7 @@ ffd/
 │   ├── tracker/
 │   └── validator/
 ├── scripts/
+├── docs/
 ├── .gitignore
 ├── .goreleaser.yaml
 ├── main.go
