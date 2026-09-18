@@ -78,9 +78,11 @@ tar -xzf "$TMP_DIR/ffd.tar.gz" -C "$TMP_DIR"
 echo "Installing to $INSTALL_DIR..."
 
 if [ ! -w "$INSTALL_DIR" ]; then
-sudo install -m 755 "$TMP_DIR/ffd" "$INSTALL_DIR/ffd"
+    sudo install -m 755 "$TMP_DIR/ffd" "$INSTALL_DIR/ffd"
+    sudo install -Dm 644 "$TMP_DIR/ffd.1" "/usr/local/share/man/man1/ffd.1"
 else
-install -m 755 "$TMP_DIR/ffd" "$INSTALL_DIR/ffd"
+    install -m 755 "$TMP_DIR/ffd" "$INSTALL_DIR/ffd"
+    install -Dm 644 "$TMP_DIR/ffd.1" "/usr/local/share/man/man1/ffd.1"
 fi
 
 
