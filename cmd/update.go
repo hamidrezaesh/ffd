@@ -15,7 +15,7 @@ type Release struct {
 	TagName string `json:"tag_name"`
 }
 
-func GetLatestVersion() (string, error) {
+func getLatestVersion() (string, error) {
 	url := "https://api.github.com/repos/hamidrezaesh/ffd/releases/latest"
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -55,7 +55,7 @@ var updateCmd = &cobra.Command{
 			log.Printf("OS: %v\n", os)
 
 			// checking version
-			latestVersion, err := GetLatestVersion()
+			latestVersion, err := getLatestVersion()
 			if err != nil {
 				log.Fatal(err)
 			}
