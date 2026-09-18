@@ -6,6 +6,9 @@ All notable changes to FFD are documented in this file.
 * Added upstream proxy support.
 * Added the --set-proxy option for configuring an upstream proxy.
 
+## Fixed
+* Fixed version comparison in `ffd update` when GitHub release tags include the `v` prefix.
+
 ## v0.3.11
 ### Performance
 * Added protocol availability checks to avoid attempting unsupported protocols.
