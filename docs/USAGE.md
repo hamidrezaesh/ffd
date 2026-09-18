@@ -1,6 +1,8 @@
 # Usage
 
-## Basic
+## Root
+
+### Basic
 
 ```bash
 ffd <URL>
@@ -12,40 +14,22 @@ Download multiple files:
 ffd <URL1> <URL2> <URL3>
 ```
 
-## Commands
+### Options
 
-### `proxy`
+| Option                 | Short | Description                 | Default |
+| ---------------------- | ----- | --------------------------- | ------- |
+| `--output NAME`        | `-o`  | Custom output filename      | —       |
+| `--wait SECONDS`       | `-w`  | Wait before downloading     | —       |
+| `--path PATH`          | `-p`  | Output directory            | `.`     |
+| `--max-retries NUMBER` | `-r`  | Maximum retries             | `4`     |
+| `--max-workers NUMBER` | `-W`  | Maximum concurrent workers  | `8`     |
+| `--max-chunks NUMBER`  | `-c`  | Maximum download chunks     | `12`    |
+| `--protocol PROTOCOL`  | —     | HTTP protocol to use        | `auto`  |
+| `--set-proxy PROXY`    | —     | Set a proxy for downloading | —       |
+| `--help`               | `-h`  | Show help                   | —       |
+| `--version`            | `-v`  | Show version                | —       |
 
-Start the ffd forward proxy.
-
-```bash
-ffd proxy
-```
-
-### `update`
-
-Update ffd to the latest version.
-
-```bash
-ffd update
-```
-
-## Options
-
-| Option                 | Short | Description                | Default |
-| ---------------------- | ----- | -------------------------- | ------- |
-| `--output NAME`        | `-o`  | Custom output filename     | —       |
-| `--wait SECONDS`       | `-w`  | Wait before downloading    | —       |
-| `--path PATH`          | `-p`  | Output directory           | `.`     |
-| `--max-retries NUMBER` | `-r`  | Maximum retries            | `4`     |
-| `--max-workers NUMBER` | `-W`  | Maximum concurrent workers | `8`     |
-| `--max-chunks NUMBER`  | `-c`  | Maximum download chunks    | `12`    |
-| `--protocol PROTOCOL`  | —     | HTTP protocol to use       | `auto`  |
-| `--set-proxy PROXY`    | —     | Set proxy server           | —       |
-| `--help`               | `-h`  | Show help                  | —       |
-| `--version`            | `-v`  | Show version               | —       |
-
-## Examples
+### Examples
 
 Custom filename:
 
@@ -89,4 +73,52 @@ Set a proxy for downloading:
 ffd <URL> --set-proxy http://127.0.0.1:8000
 ```
 
-For more details about ffd's architecture and internals, see the project documentation.
+---
+
+## Proxy
+
+Start the ffd forward proxy:
+
+```bash
+ffd proxy
+```
+
+The proxy listens on `127.0.0.1:8000` by default.
+
+### Options
+
+| Option              | Description                             | Default |
+| ------------------- | --------------------------------------- | ------- |
+| `--port PORT`       | Set the local proxy listening port      | `8000`  |
+| `--set-proxy PROXY` | Set an upstream proxy for the ffd proxy | —       |
+| `--help`            | Show help                               | —       |
+
+### Examples
+
+Set a custom port:
+
+```bash
+ffd proxy --port 9000
+```
+
+Set an upstream proxy:
+
+```bash
+ffd proxy --set-proxy http://127.0.0.1:9000
+```
+
+Set both:
+
+```bash
+ffd proxy --port 9000 --set-proxy http://127.0.0.1:8080
+```
+
+---
+
+## Update
+
+Update ffd to the latest version:
+
+```bash
+ffd update
+```
