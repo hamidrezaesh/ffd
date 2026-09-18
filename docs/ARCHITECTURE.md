@@ -17,6 +17,7 @@ ffd/
 │   ├── tracker/
 │   └── validator/
 ├── scripts/
+├── docs/
 ├── .gitignore
 ├── .goreleaser.yaml
 ├── main.go
@@ -143,6 +144,10 @@ Installation script for Linux and macOS.
 Installation script for Windows PowerShell.
 
 ---
+
+# `docs/`
+
+Contains documentation and manual pages for ffd.
 
 # Configuration & Build Files
 
