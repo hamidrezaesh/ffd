@@ -1,25 +1,61 @@
 version: 2
 
 builds:
-  - main: .
+  - id: linux
+    main: .
     binary: ffd
     ldflags:
       - -X github.com/hamidrezaesh/ffd/cmd.version={{.Version}}
     goos:
       - linux
-      - windows
+    goarch:
+      - amd64
+      - arm64
+
+  - id: darwin
+    main: .
+    binary: ffd
+    ldflags:
+      - -X github.com/hamidrezaesh/ffd/cmd.version={{.Version}}
+    goos:
       - darwin
     goarch:
       - amd64
       - arm64
 
+  - id: windows
+    main: .
+    binary: ffd
+    ldflags:
+      - -X github.com/hamidrezaesh/ffd/cmd.version={{.Version}}
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
 archives:
-  - formats:
+  - id: linux
+    ids:
+      - linux
+    formats:
       - tar.gz
-    format_overrides:
-      - goos: windows
-        formats:
-          - zip
+    files:
+      - docs/ffd.1
+
+  - id: darwin
+    ids:
+      - darwin
+    formats:
+      - tar.gz
+    files:
+      - docs/ffd.1
+
+  - id: windows
+    ids:
+      - windows
+    formats:
+      - zip
 
 checksum:
   name_template: checksums.txt
