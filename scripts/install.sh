@@ -79,7 +79,7 @@ echo "Installing to $INSTALL_DIR..."
 
 if [ ! -w "$INSTALL_DIR" ]; then
     sudo install -m 755 "$TMP_DIR/ffd" "$INSTALL_DIR/ffd"
-    sudo install -Dm 644 "$TMP_DIR/ffd.1" "/usr/local/share/man/man1/ffd.1"
+    sudo install -Dm 644 "$TMP_DIR/docs/ffd.1" "/usr/local/share/man/man1/ffd.1"
 else
     install -m 755 "$TMP_DIR/ffd" "$INSTALL_DIR/ffd"
     install -Dm 644 "$TMP_DIR/ffd.1" "/usr/local/share/man/man1/ffd.1"
