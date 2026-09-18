@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -56,6 +57,7 @@ var updateCmd = &cobra.Command{
 
 			// checking version
 			latestVersion, err := getLatestVersion()
+			latestVersion = strings.TrimPrefix(latestVersion, "v")
 			if err != nil {
 				log.Fatal(err)
 			}
