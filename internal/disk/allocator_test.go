@@ -21,4 +21,7 @@ func TestAllocate(t *testing.T){
 	size := i.Size()
 
 	t.Logf("\nFilename: %v\nPath: %v\nExpectedSize: %v\nFile: %v\nFinalSize: %v", f.Filename, f.Path, f.TotalSize, file, size)
+
+	_ = os.Remove("example.test")
+	t.Log("example file removed\n")
 }
