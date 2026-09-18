@@ -2,9 +2,29 @@
 All notable changes to FFD are documented in this file.
 
 ## [Unreleased]
+*Nothing Yet.*
+
+# v0.3.13
+### Fixed
+
+* Fixed installation of the FFD man page from release packages.
+
+
+# v0.3.12
 ### Added
-* Added upstream proxy support.
-* Added the --set-proxy option for configuring an upstream proxy.
+
+* Added proxy support.
+* Added a man page for FFD.
+
+### Changed
+
+* Improved the command structure by splitting commands into separate files.
+* Improved the scheduler structure by splitting it into separate files.
+
+### Fixed
+
+* Fixed version checking when GitHub release versions include the `v` prefix.
+
 
 ## Fixed
 * Fixed version comparison in `ffd update` when GitHub release tags include the `v` prefix.
