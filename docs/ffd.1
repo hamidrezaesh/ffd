@@ -1,0 +1,210 @@
+.TH FFD 1 "September 2026" "FFD 0.3.11" "User Commands"
+
+.SH NAME
+ffd - Fast Fetch Data, a fast command-line downloader
+
+.SH SYNOPSIS
+.B ffd
+.RI [ OPTIONS ] " URL..."
+.br
+.B ffd proxy
+.RI [ OPTIONS ]
+.br
+.B ffd update
+
+.SH DESCRIPTION
+.B ffd
+is a fast command-line downloader written in Go.
+
+It supports parallel downloads, multiple HTTP protocols, configurable workers and chunks, retries, and proxy support.
+
+.SH DOWNLOAD
+
+.SS Basic
+
+Download a file:
+
+.PP
+.nf
+ffd URL
+.fi
+
+.PP
+Download multiple files:
+
+.PP
+.nf
+ffd URL1 URL2 URL3
+.fi
+
+.SS Options
+
+.TP
+.BR -o ", " --output " " NAME
+Custom output filename.
+
+.TP
+.BR -w ", " --wait " " SECONDS
+Wait before downloading.
+
+.TP
+.BR -p ", " --path " " PATH
+Output directory. The default is the current directory.
+
+.TP
+.BR -r ", " --max-retries " " NUMBER
+Maximum number of retries. The default is 4.
+
+.TP
+.BR -W ", " --max-workers " " NUMBER
+Maximum number of concurrent workers. The default is 8.
+
+.TP
+.BR -c ", " --max-chunks " " NUMBER
+Maximum number of download chunks. The default is 12.
+
+.TP
+.B --protocol PROTOCOL
+HTTP protocol to use. The default is
+.B auto.
+
+.TP
+.B --set-proxy PROXY
+Set a proxy server for downloading.
+
+.TP
+.BR -h ", " --help
+Show help information.
+
+.TP
+.BR -v ", " --version
+Show the ffd version.
+
+.SS Examples
+
+.TP
+.B Download a file
+.PP
+.nf
+ffd https://example.com/file.zip
+.fi
+
+.TP
+.B Download multiple files
+.PP
+.nf
+ffd https://example.com/file1.zip https://example.com/file2.zip
+.fi
+
+.TP
+.B Custom filename
+.PP
+.nf
+ffd https://example.com/file.zip -o my-file.zip
+.fi
+
+.TP
+.B Custom download directory
+.PP
+.nf
+ffd https://example.com/file.zip -p ~/Downloads
+.fi
+
+.TP
+.B More workers and chunks
+.PP
+.nf
+ffd https://example.com/file.zip -W 16 -c 20
+.fi
+
+.TP
+.B Force HTTP/2
+.PP
+.nf
+ffd https://example.com/file.zip --protocol http2
+.fi
+
+.TP
+.B Wait before downloading
+.PP
+.nf
+ffd https://example.com/file.zip -w 10
+.fi
+
+.TP
+.B Increase retries
+.PP
+.nf
+ffd https://example.com/file.zip -r 10
+.fi
+
+.TP
+.B Set a proxy for downloading
+.PP
+.nf
+ffd https://example.com/file.zip --set-proxy http://127.0.0.1:8000
+.fi
+
+.SH PROXY
+
+The
+.B proxy
+command starts the ffd forward proxy.
+
+.SS Usage
+
+Start the proxy with the default configuration:
+
+.PP
+.nf
+ffd proxy
+.fi
+
+.PP
+By default, the proxy listens on:
+
+.PP
+.nf
+127.0.0.1:8000
+.fi
+
+.SS Options
+
+.TP
+.B --port PORT
+Set the local proxy listening port.
+
+.TP
+.B --set-proxy PROXY
+Set an upstream proxy server for the ffd proxy.
+
+.PP
+For example:
+
+.PP
+.nf
+ffd proxy --port 9000
+.fi
+
+.PP
+Set an upstream proxy:
+
+.PP
+.nf
+ffd proxy --set-proxy http://127.0.0.1:9000
+.fi
+
+.SH UPDATE
+
+The
+.B update
+command updates ffd to the latest version.
+
+.PP
+.nf
+ffd update
+.fi
+
+.SH AUTHORS
+
+Hamidreza
