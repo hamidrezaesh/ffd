@@ -1,3 +1,5 @@
+
+
 <div align="center">
 
 # FFD
@@ -106,6 +108,7 @@ ffd/
 ├── .goreleaser.yaml
 ├── main.go
 ├── CONTRIBUTING.md
+├── CHANGELOG.md
 ├── go.mod
 ├── go.sum
 ├── README.md
