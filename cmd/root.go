@@ -10,6 +10,7 @@ import (
 	"github.com/hamidrezaesh/ffd/internal/engine"
 	"github.com/hamidrezaesh/ffd/internal/formatter"
 	"github.com/hamidrezaesh/ffd/internal/scheduler"
+	"github.com/hamidrezaesh/ffd/internal/version"
 	"github.com/spf13/cobra"
 )
 
@@ -111,7 +112,7 @@ func downloadUrl(req engine.Request) error {
 var rootCmd = &cobra.Command{
 	Use:     "ffd [URL] [OPTIONS]",
 	Short:   "Fast, multi-segment data fetcher",
-	Version: version,
+	Version: version.Version,
 	Args:    cobra.ArbitraryArgs,
 
 	Run: func(cmd *cobra.Command, args []string) {

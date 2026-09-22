@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/hamidrezaesh/ffd/internal/version"
 	"github.com/spf13/cobra"
 )
 
@@ -61,8 +62,8 @@ var updateCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			if latestVersion == version {
-				log.Printf("ffd is up to date (%v)\n", version)
+			if latestVersion == version.Version {
+				log.Printf("ffd is up to date (%v)\n", version.Version)
 				return
 			}
 

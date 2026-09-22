@@ -5,7 +5,7 @@ builds:
     main: .
     binary: ffd
     ldflags:
-      - -X github.com/hamidrezaesh/ffd/cmd.version={{.Version}}
+      - -X github.com/hamidrezaesh/ffd/version.Version={{.Version}}
     goos:
       - linux
     goarch:
@@ -16,7 +16,7 @@ builds:
     main: .
     binary: ffd
     ldflags:
-      - -X github.com/hamidrezaesh/ffd/cmd.version={{.Version}}
+      - -X github.com/hamidrezaesh/ffd/version.Version={{.Version}}
     goos:
       - darwin
     goarch:
@@ -27,7 +27,7 @@ builds:
     main: .
     binary: ffd
     ldflags:
-      - -X github.com/hamidrezaesh/ffd/cmd.version={{.Version}}
+      - -X github.com/hamidrezaesh/ffd/version.Version={{.Version}}
     goos:
       - windows
     goarch:
