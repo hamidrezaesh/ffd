@@ -11,25 +11,25 @@ import (
 )
 
 /*
-Scheduler is responsible for choose protocol, choose workers
-and download the actual file.
+Scheduler is responsible for choosing the protocol, choosing workers,
+and downloading the actual file.
 */
+type Scheduler struct {
+	Client      *http.Client
+	MaxRetries  int
+	MinFileSize int64
+	Progress    *tracker.Progress
+	URL         string
+	TotalSize   int64
+	MaxWorkers  int
+	MaxChunks   int
+}
 
 /*
-After testing protocol and workers count, we use fetchRest to download rest of the file
-from the last downloaded byte
+fetchRest downloads the remaining part of the file.
 */
-
-func fetchRest(
-	url string,
-	totalSize int64,
+func (s *Scheduler) fetchRest(
 	startByte int64,
-	minFileSize int64,
-	maxWorkers int,
-	maxChunks int,
-	client *http.Client,
-	progress *tracker.Progress,
-	maxRetries int,
 ) (<-chan Chunk, <-chan error) {
 	out := make(chan Chunk)
 	errCh := make(chan error, 1)
@@ -38,23 +38,15 @@ func fetchRest(
 		defer close(out)
 		defer close(errCh)
 
-		if startByte >= totalSize {
+		if startByte >= s.TotalSize {
 			return
-		}
-
-		if maxWorkers <= 0 {
-			maxWorkers = 1
-		}
-
-		if maxChunks <= 0 {
-			maxChunks = maxWorkers * 2
 		}
 
 		ranges, err := Split(
 			startByte,
-			totalSize-1,
-			maxChunks,
-			minFileSize,
+			s.TotalSize-1,
+			s.MaxChunks,
+			s.MinFileSize,
 		)
 
 		if err != nil {
@@ -66,8 +58,7 @@ func fetchRest(
 
 		var wg sync.WaitGroup
 
-		workerCount := maxWorkers
-
+		workerCount := s.MaxWorkers
 		if workerCount > len(ranges) {
 			workerCount = len(ranges)
 		}
@@ -77,7 +68,7 @@ func fetchRest(
 			return
 		}
 
-		workerChunks := make(chan Chunk, maxWorkers*2)
+		workerChunks := make(chan Chunk, s.MaxWorkers*2)
 
 		// Start workers.
 		for i := 0; i < workerCount; i++ {
@@ -88,16 +79,16 @@ func fetchRest(
 
 				for job := range jobs {
 					task := Task{
-						URL:    url,
+						URL:    s.URL,
 						Range:  job,
 						Index:  workerID,
-						Client: client,
+						Client: s.Client,
 					}
 
 					if err := Worker(
 						task,
-						progress,
-						maxRetries,
+						s.Progress,
+						s.MaxRetries,
 						workerChunks,
 					); err != nil {
 						select {
@@ -136,11 +127,9 @@ func fetchRest(
 }
 
 /*
-Download is the main component of scheduler. it tests protocol and workers using
-testWorkers and testProtocol, then download the rest of file using fetchRest.finally it
-returns the downloaded bytes and error (if exists)
+Download is the main component of the scheduler.
+it uses testProtocol and testWorkers and fetchRest to download the file while downloading it.
 */
-
 func Download(
 	url string,
 	totalSize int64,
@@ -152,6 +141,16 @@ func Download(
 	maxChunks int,
 	preferredProtocol int,
 ) (<-chan Chunk, <-chan error) {
+	scheduler := &Scheduler{
+		MaxRetries:  maxRetries,
+		MinFileSize: 5 * 1024 * 1024,
+		Progress:    progress,
+		URL:         url,
+		TotalSize:   totalSize,
+		MaxWorkers:  maxWorkers,
+		MaxChunks:   maxChunks,
+	}
+
 	out := make(chan Chunk)
 	errCh := make(chan error, 1)
 
@@ -159,18 +158,18 @@ func Download(
 		defer close(out)
 		defer close(errCh)
 
-		if totalSize <= 0 {
+		if scheduler.TotalSize <= 0 {
 			errCh <- fmt.Errorf("invalid total size")
 			return
 		}
 
-		// if server does not support ranges.
+		// If server does not support ranges.
 		if !acceptRange {
 			task := Task{
-				URL: url,
+				URL: scheduler.URL,
 				Range: ByteRange{
 					Start: 0,
-					End:   totalSize - 1,
+					End:   scheduler.TotalSize - 1,
 				},
 				Index: 0,
 				Client: &http.Client{
@@ -185,6 +184,8 @@ func Download(
 				},
 			}
 
+			scheduler.Client = task.Client
+
 			workerChunks := make(chan Chunk)
 
 			go func() {
@@ -192,8 +193,8 @@ func Download(
 
 				if err := Worker(
 					task,
-					progress,
-					maxRetries,
+					scheduler.Progress,
+					scheduler.MaxRetries,
 					workerChunks,
 				); err != nil {
 					select {
@@ -213,14 +214,11 @@ func Download(
 		startByte := int64(0)
 		var protocol int
 
-		// detect best protocol if it isn't specified by user
+		// Detect best protocol if it isn't specified by the user.
 		if preferredProtocol == 0 {
-			finalProtocol, nextByte, err := testProtocol(
-				url,
+			finalProtocol, nextByte, err := scheduler.testProtocol(
 				proxyServer,
-				totalSize,
 				startByte,
-				progress,
 				func(chunk Chunk) {
 					out <- chunk
 				},
@@ -236,20 +234,16 @@ func Download(
 			protocol = preferredProtocol
 		}
 
-		// make a client
-		client := newClient(protocol, proxyServer)
-		if client == nil {
-			client = http.DefaultClient
+		// Make a client.
+		scheduler.Client = newClient(protocol, proxyServer)
+		if scheduler.Client == nil {
+			scheduler.Client = http.DefaultClient
 		}
 
 		// Automatically determine worker count.
-		if maxWorkers <= 0 {
-			selectedWorkers, nextByte, err := testWorkers(
-				url,
-				totalSize,
+		if scheduler.MaxWorkers <= 0 {
+			selectedWorkers, nextByte, err := scheduler.testWorkers(
 				startByte,
-				client,
-				progress,
 				func(chunk Chunk) {
 					out <- chunk
 				},
@@ -260,34 +254,24 @@ func Download(
 				return
 			}
 
-			maxWorkers = selectedWorkers
+			scheduler.MaxWorkers = selectedWorkers
 			startByte = nextByte
 		}
 
-		if maxWorkers <= 0 {
-			maxWorkers = 1
+		if scheduler.MaxWorkers <= 0 {
+			scheduler.MaxWorkers = 1
 		}
 
-		if maxChunks <= 0 {
-			maxChunks = maxWorkers * 2
+		if scheduler.MaxChunks <= 0 {
+			scheduler.MaxChunks = scheduler.MaxWorkers * 2
 		}
 
 		// Tests downloaded the entire file.
-		if startByte >= totalSize {
+		if startByte >= scheduler.TotalSize {
 			return
 		}
 
-		chunks, errors := fetchRest(
-			url,
-			totalSize,
-			startByte,
-			5*1024*1024,
-			maxWorkers,
-			maxChunks,
-			client,
-			progress,
-			maxRetries,
-		)
+		chunks, errors := scheduler.fetchRest(startByte)
 
 		for chunks != nil || errors != nil {
 			select {

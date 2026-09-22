@@ -23,11 +23,6 @@ func clamp(value, minValue, maxValue int64) int64 {
 	return value
 }
 
-/*
-nWorkers is responsible for downloading a part of file using input workers.
-it downloads the part and return downloaded bytes and speed.
-*/
-
 func nWorkers(
 	url string,
 	workers int,
@@ -67,23 +62,18 @@ func nWorkers(
 		var errOnce sync.Once
 
 		sendError := func(err error) {
-			if err == nil {
-				return
-			}
-
 			errOnce.Do(func() {
 				errCh <- err
 			})
 		}
 
-		// Divide the requested range between workers.
-		base := totalSize / int64(workers)
+		baseSize := totalSize / int64(workers)
 		remainder := totalSize % int64(workers)
 
 		nextStart := startByte
 
 		for i := 0; i < workers; i++ {
-			workerSize := base
+			workerSize := baseSize
 
 			if int64(i) < remainder {
 				workerSize++
@@ -111,10 +101,7 @@ func nWorkers(
 
 				req.Header.Set(
 					"Range",
-					"bytes="+
-						strconv.FormatInt(start, 10)+
-						"-"+
-						strconv.FormatInt(end, 10),
+					"bytes="+strconv.FormatInt(start, 10)+"-"+strconv.FormatInt(end, 10),
 				)
 
 				resp, err := client.Do(req)
@@ -172,26 +159,11 @@ func nWorkers(
 	return out, errCh
 }
 
-/*
-testWorkers test multiple workers' speed while downloading the file and return the best workers for download
-*/
-
-func testWorkers(
-	url string,
-	totalSize int64,
+func (s *Scheduler) testWorkers(
 	startByte int64,
-	client *http.Client,
-	progress *tracker.Progress,
 	emit func(Chunk),
 ) (int, int64, error) {
-	if totalSize <= 0 {
-		return 0, 0, fmt.Errorf("invalid total size")
-	}
-
-	const minTestSize int64 = 2 * 1024 * 1024
-	const maxTestSize int64 = 200 * 1024 * 1024
-
-	testWorkerCounts := []int{
+	workerCounts := []int{
 		8,
 		16,
 		32,
@@ -199,35 +171,28 @@ func testWorkers(
 	}
 
 	testSize := clamp(
-		totalSize/50,
-		minTestSize,
-		maxTestSize,
+		s.TotalSize/50,
+		2*1024*1024,
+		200*1024*1024,
 	)
 
-	if testSize*int64(len(testWorkerCounts)) > totalSize {
-		testSize = totalSize / int64(len(testWorkerCounts))
-	}
+	var bestWorkers int
+	var bestSpeed float64
 
-	if testSize <= 0 {
-		return 1, 0, nil
-	}
-
-	speeds := make([]float64, 0, len(testWorkerCounts))
-
-	for _, workerCount := range testWorkerCounts {
-		if startByte >= totalSize {
+	for _, workerCount := range workerCounts {
+		if startByte >= s.TotalSize {
 			break
 		}
 
 		testEnd := startByte + testSize
-		switch {
-		case testEnd > totalSize:
-			testEnd = totalSize
+
+		if testEnd > s.TotalSize {
+			testEnd = s.TotalSize
 		}
 
 		ranges, err := Split(
-			testEnd,
 			startByte,
+			testEnd-1,
 			1,
 			0,
 		)
@@ -235,20 +200,18 @@ func testWorkers(
 			return 0, startByte, err
 		}
 
-		testRange := ranges[1]
+		testRange := ranges[0]
 
-		testStart := time.Now()
+		startTime := time.Now()
 
 		chunks, errors := nWorkers(
-			url,
+			s.URL,
 			workerCount,
 			testRange.Start,
 			testRange.End,
-			client,
-			progress,
+			s.Client,
+			s.Progress,
 		)
-
-		var downloaded int64
 
 		for chunks != nil || errors != nil {
 			select {
@@ -257,8 +220,6 @@ func testWorkers(
 					chunks = nil
 					continue
 				}
-
-				downloaded += int64(len(chunk.Bytes))
 
 				if emit != nil {
 					emit(chunk)
@@ -276,29 +237,25 @@ func testWorkers(
 			}
 		}
 
-		elapsed := time.Since(testStart).Seconds()
+		elapsed := time.Since(startTime).Seconds()
 
-		speed := float64(0)
-		if elapsed > 0 {
-			speed = float64(downloaded) / elapsed
+		if elapsed <= 0 {
+			elapsed = 0.000001
 		}
 
-		speeds = append(speeds, speed)
+		speed := float64(testRange.End-testRange.Start+1) / elapsed
+
+		if speed > bestSpeed {
+			bestSpeed = speed
+			bestWorkers = workerCount
+		}
 
 		startByte = testRange.End + 1
 	}
 
-	if len(speeds) == 0 {
-		return 1, 0, nil
+	if bestWorkers == 0 {
+		bestWorkers = 1
 	}
 
-	bestIndex := 0
-
-	for i := 1; i < len(speeds); i++ {
-		if speeds[i] > speeds[bestIndex] {
-			bestIndex = i
-		}
-	}
-
-	return testWorkerCounts[bestIndex], startByte, nil
+	return bestWorkers, startByte, nil
 }

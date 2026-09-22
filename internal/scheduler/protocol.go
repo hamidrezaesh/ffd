@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/hamidrezaesh/ffd/internal/tracker"
 	"github.com/quic-go/quic-go/http3"
 )
 
@@ -17,7 +16,6 @@ request using the specified HTTP protocol.
 
 It returns true if the request succeeds and false if it fails.
 */
-
 func checkAvailableProtocol(url string, client *http.Client) bool {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -36,21 +34,21 @@ func checkAvailableProtocol(url string, client *http.Client) bool {
 }
 
 /*
-testProtocol is responsible for testing HTTP/1.1, HTTP/2 and HTTP/3 speeds while downloading parts of
-the file.
-it tests a portion of the file with each protocol and returns the preferred protocol.
-when speeds are within ~5% of each other, it prefers HTTP/3 over HTTP/2 and HTTP/2 over HTTP/1.1.
-*/
+testProtocol is responsible for testing HTTP/1.1, HTTP/2 and HTTP/3
+speeds while downloading parts of the file.
 
-func testProtocol(
-	url string,
+It tests a portion of the file with each protocol and returns the
+preferred protocol.
+
+When speeds are within ~5% of each other, it prefers HTTP/3 over
+HTTP/2 and HTTP/2 over HTTP/1.1.
+*/
+func (s *Scheduler) testProtocol(
 	proxyServer *url.URL,
-	totalSize int64,
 	startByte int64,
-	progress *tracker.Progress,
 	emit func(Chunk),
 ) (int, int64, error) {
-	if totalSize <= 0 {
+	if s.TotalSize <= 0 {
 		return 0, 0, fmt.Errorf("invalid total size")
 	}
 
@@ -64,30 +62,31 @@ func testProtocol(
 	}
 
 	testSize := clamp(
-		totalSize/50,
+		s.TotalSize/50,
 		minTestSize,
 		maxTestSize,
 	)
 
-	if testSize*int64(len(testProtocols)) > totalSize {
-		testSize = totalSize / int64(len(testProtocols))
+	if testSize*int64(len(testProtocols)) > s.TotalSize {
+		testSize = s.TotalSize / int64(len(testProtocols))
 	}
 
 	if testSize <= 0 {
 		return 0, 0, nil
 	}
 
-	var speed1 float64 = 0.0
-	var speed2 float64 = 0.0
-	var speed3 float64 = 0.0
+	var speed1 float64
+	var speed2 float64
+	var speed3 float64
 
 	for _, protocol := range testProtocols {
-		if startByte >= totalSize {
+		if startByte >= s.TotalSize {
 			break
 		}
+
 		testEnd := startByte + testSize
-		if testEnd > totalSize {
-			testEnd = totalSize
+		if testEnd > s.TotalSize {
+			testEnd = s.TotalSize
 		}
 
 		ranges, err := Split(
@@ -100,7 +99,7 @@ func testProtocol(
 			return 0, startByte, err
 		}
 
-		testRange := ranges[1]
+		testRange := ranges[0]
 
 		transport := &http.Transport{
 			MaxIdleConns:        16,
@@ -135,11 +134,11 @@ func testProtocol(
 			}
 		}
 
-		if proxyServer != nil {
+		if proxyServer != nil && protocol != 3 {
 			transport.Proxy = http.ProxyURL(proxyServer)
 		}
 
-		supported := checkAvailableProtocol(url, client)
+		supported := checkAvailableProtocol(s.URL, client)
 		if !supported {
 			continue
 		}
@@ -147,12 +146,12 @@ func testProtocol(
 		testStart := time.Now()
 
 		chunks, errors := nWorkers(
-			url,
+			s.URL,
 			8,
 			testRange.Start,
 			testRange.End,
 			client,
-			progress,
+			s.Progress,
 		)
 
 		var downloaded int64
@@ -185,7 +184,7 @@ func testProtocol(
 
 		elapsed := time.Since(testStart).Seconds()
 
-		speed := float64(0)
+		var speed float64
 		if elapsed > 0 {
 			speed = float64(downloaded) / elapsed
 		}
