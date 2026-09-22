@@ -4,6 +4,9 @@ All notable changes to FFD are documented in this file.
 
 ## [Unreleased]
 
+### Added
+* Added HTTP Header support
+
 ### Changed
 
 * Improved the scheduler structure by using shared state through the Scheduler.
