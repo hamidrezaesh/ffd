@@ -5,9 +5,10 @@ The ffd source code is organized into separate packages, with each package respo
 ```text
 ffd/
 ├── .github/
-|   ├── workflows/
+│   └── workflows/
 ├── cmd/
 ├── internal/
+│   ├── config/
 │   ├── disk/
 │   ├── engine/
 │   ├── formatter/
@@ -18,6 +19,8 @@ ffd/
 │   └── validator/
 ├── scripts/
 ├── docs/
+├── test/
+├── version/
 ├── .gitignore
 ├── .goreleaser.yaml
 ├── main.go
@@ -48,15 +51,12 @@ It handles:
 
 * CLI arguments
 * download flags
+* HTTP headers
 * multiple URLs
 * protocol selection
 * workers and chunks
 * retries
 * output path
-
-### `cmd/version.go`
-
-Contains the build-time version variable used by `ffd --version`.
 
 ---
 
@@ -64,7 +64,26 @@ Contains the build-time version variable used by `ffd --version`.
 
 Contains ffd's internal implementation.
 
-These packages are not intended to be imported by external Go projects.
+## `internal/config/`
+
+Responsible for ffd's configuration.
+
+It handles:
+
+* loading the configuration file
+* creating the default configuration
+* updating configuration values
+* platform-specific configuration paths
+
+The configuration file is stored in the user's standard configuration directory:
+
+```text
+Linux   → ~/.config/ffd/config.toml
+macOS   → ~/Library/Application Support/ffd/config.toml
+Windows → %AppData%\ffd\config.toml
+```
+
+---
 
 ## `internal/engine/`
 
@@ -73,6 +92,7 @@ Responsible for the actual download process.
 It handles:
 
 * HTTP requests
+* HTTP headers
 * downloading file ranges
 * workers
 * writing downloaded data
@@ -94,6 +114,7 @@ It handles things such as:
 * testing HTTP protocols
 * selecting the preferred protocol
 * creating download ranges
+* applying HTTP headers
 
 The scheduler produces the work that the engine executes.
 
@@ -130,6 +151,35 @@ It handles:
 * accelerated downloads when possible
 
 ---
+
+# `version/`
+
+Contains the ffd version variable.
+
+The version is injected at build time by GoReleaser and is used by commands such as:
+
+```bash
+ffd --version
+```
+
+---
+
+# `test/`
+
+Contains development and debugging tools used for testing ffd.
+
+### `test/test-server.go`
+
+A local HTTP test server that prints information about incoming requests, including:
+
+* HTTP method
+* URL
+* HTTP protocol
+* request headers
+* request body
+
+It can be used to test features such as custom headers, protocol selection, range requests, and proxy behavior.
+
 
 # `scripts/`
 
