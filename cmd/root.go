@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hamidrezaesh/ffd/internal/config"
 	"github.com/hamidrezaesh/ffd/internal/engine"
 	"github.com/hamidrezaesh/ffd/internal/formatter"
 	"github.com/hamidrezaesh/ffd/internal/scheduler"
@@ -121,7 +122,22 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		// load configs
+		cfg, err := config.GetConfig()
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+
+		// set headers
 		headers := scheduler.Headers{}
+
+		for _, header := range cfg.Headers {
+			headers = append(headers, scheduler.Header{
+				Key:   header.Key,
+				Value: header.Value,
+			})
+		}
 
 		for _, value := range requestHeaders {
 			parts := strings.SplitN(value, ":", 2)
