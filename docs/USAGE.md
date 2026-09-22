@@ -25,6 +25,7 @@ ffd <URL1> <URL2> <URL3>
 | `--max-workers NUMBER` | `-W`  | Maximum concurrent workers  | `8`     |
 | `--max-chunks NUMBER`  | `-c`  | Maximum download chunks     | `12`    |
 | `--protocol PROTOCOL`  | —     | HTTP protocol to use        | `auto`  |
+| `--header HEADER`      | —     | Add an HTTP header          | —       |
 | `--set-proxy PROXY`    | —     | Set a proxy for downloading | —       |
 | `--help`               | `-h`  | Show help                   | —       |
 | `--version`            | `-v`  | Show version                | —       |
@@ -67,6 +68,11 @@ Increase retries:
 ffd <URL> -r 10
 ```
 
+Add a custom HTTP header:
+
+```bash
+ffd <URL> --header "User-Agent: Mozilla/5.0"
+```
 Set a proxy for downloading:
 
 ```bash
