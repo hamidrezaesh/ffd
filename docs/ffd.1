@@ -16,7 +16,7 @@ ffd - Fast Fetch Data, a fast command-line downloader
 .B ffd
 is a fast command-line downloader written in Go.
 
-It supports parallel downloads, multiple HTTP protocols, configurable workers and chunks, retries, and proxy support.
+It supports parallel downloads, multiple HTTP protocols, configurable workers and chunks, retries, custom HTTP headers, and proxy support.
 
 .SH DOWNLOAD
 
@@ -67,6 +67,12 @@ Maximum number of download chunks. The default is 12.
 .B --protocol PROTOCOL
 HTTP protocol to use. The default is
 .B auto.
+
+.TP
+.B --header " " HEADER
+Add a custom HTTP header in the format
+.B "Header: Value".
+This option can be used multiple times.
 
 .TP
 .B --set-proxy PROXY
@@ -136,6 +142,22 @@ ffd https://example.com/file.zip -w 10
 .PP
 .nf
 ffd https://example.com/file.zip -r 10
+.fi
+
+.TP
+.B Add a custom HTTP header
+.PP
+.nf
+ffd https://example.com/file.zip --header "User-Agent: Mozilla/5.0"
+.fi
+
+.TP
+.B Add multiple HTTP headers
+.PP
+.nf
+ffd https://example.com/file.zip \\
+  --header "User-Agent: Mozilla/5.0" \\
+  --header "Authorization: Bearer TOKEN"
 .fi
 
 .TP
