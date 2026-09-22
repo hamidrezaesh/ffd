@@ -4,7 +4,9 @@ All notable changes to FFD are documented in this file.
 
 ## [Unreleased]
 
-### Nothing Yet
+### Changed
+
+* Improved the scheduler structure by using shared state through the Scheduler.
 
 ## v0.3.13
 
