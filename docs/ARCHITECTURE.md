@@ -196,3 +196,39 @@ The workflow:
 6. Publishes the release on GitHub
 
 The workflow allows releases to be created automatically without manually building binaries for every platform.
+
+# Requirements
+
+## System Requirements
+
+* **Go:** 1.26.4 or newer
+* **OS:** Linux, macOS, or Windows
+* **Architecture:** Any architecture supported by Go 1.26.4
+
+## Go Dependencies
+
+FFD uses the following direct dependencies:
+
+* [`github.com/quic-go/quic-go`](https://github.com/quic-go/quic-go) `v0.62.0` — HTTP/3 and QUIC support
+* [`github.com/spf13/cobra`](https://github.com/spf13/cobra) `v1.10.2` — CLI command framework
+* [`golang.org/x/sys`](https://pkg.go.dev/golang.org/x/sys) `v0.47.0` — Low-level system functionality
+
+The project also includes several indirect dependencies managed automatically by Go modules.
+
+## Building from Source
+
+Make sure Go 1.26.4 or newer is installed, then run:
+
+```bash
+git clone https://github.com/hamidrezaesh/ffd.git
+cd ffd
+go build -o build/ffd
+```
+
+Go will automatically download the required dependencies from `go.mod`.
+
+## Notes
+
+* No external runtime dependencies are required.
+* A working internet connection is recommended when building for the first time so Go can download dependencies.
+* HTTP/3 functionality depends on network/server support for QUIC.
