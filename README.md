@@ -117,10 +117,6 @@ ffd/
 
 For detailed information about the project structure, packages, files, and how ffd works internally, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
-## Requirements
-
-* Go 1.26 or newer for building from source
-
 ## License
 
 `ffd` is licensed under the Apache 2.0 License.
