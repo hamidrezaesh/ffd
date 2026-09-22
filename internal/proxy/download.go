@@ -50,6 +50,7 @@ func (s *Server) proxyAccelerated(
 		req.URL.String(),
 		totalSize,
 		s.Proxy,
+		nil,
 		progress,
 		true,
 		maxRetries,

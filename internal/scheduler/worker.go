@@ -13,7 +13,7 @@ type Task struct {
 	URL    string
 	Range  ByteRange
 	Index  int
-	Client *http.Client
+	Client *HeaderClient
 }
 
 type Chunk struct {

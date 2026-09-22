@@ -16,6 +16,7 @@ type Request struct {
 	URL      string
 	Path     string
 	Filename string
+	Headers  scheduler.Headers
 }
 
 type Result struct {
@@ -39,8 +40,13 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, prefer
 		maxWorkers = maxChunks
 	}
 
-	// Get response
-	resp, err := http.DefaultClient.Head(req.URL)
+	client := &scheduler.HeaderClient{
+		Base:    http.DefaultClient,
+		Headers: req.Headers,
+	}
+
+	// Get a response
+	resp, err := client.Head(req.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +102,7 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, prefer
 			req.URL,
 			md.TotalSize,
 			proxyServer,
+			req.Headers,
 			progress,
 			md.AcceptRanges,
 			maxRetries,

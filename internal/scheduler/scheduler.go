@@ -15,7 +15,7 @@ Scheduler is responsible for choosing the protocol, choosing workers,
 and downloading the actual file.
 */
 type Scheduler struct {
-	Client      *http.Client
+	Client      *HeaderClient
 	MaxRetries  int
 	MinFileSize int64
 	Progress    *tracker.Progress
@@ -128,12 +128,13 @@ func (s *Scheduler) fetchRest(
 
 /*
 Download is the main component of the scheduler.
-it uses testProtocol and testWorkers and fetchRest to download the file while downloading it.
+It uses testProtocol, testWorkers and fetchRest to download the file.
 */
 func Download(
 	url string,
 	totalSize int64,
 	proxyServer *url.URL,
+	headers Headers,
 	progress *tracker.Progress,
 	acceptRange bool,
 	maxRetries int,
@@ -165,26 +166,34 @@ func Download(
 
 		// If server does not support ranges.
 		if !acceptRange {
+			baseClient := &http.Client{
+				Transport: &http.Transport{
+					MaxIdleConns:        4,
+					MaxIdleConnsPerHost: 2,
+					MaxConnsPerHost:     2,
+					IdleConnTimeout:     90 * time.Second,
+					ForceAttemptHTTP2:   true,
+				},
+			}
+
+			if proxyServer != nil {
+				baseClient.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyServer)
+			}
+
+			scheduler.Client = &HeaderClient{
+				Base:    baseClient,
+				Headers: headers,
+			}
+
 			task := Task{
 				URL: scheduler.URL,
 				Range: ByteRange{
 					Start: 0,
 					End:   scheduler.TotalSize - 1,
 				},
-				Index: 0,
-				Client: &http.Client{
-					Transport: &http.Transport{
-						MaxIdleConns:        4,
-						MaxIdleConnsPerHost: 2,
-						MaxConnsPerHost:     2,
-						IdleConnTimeout:     90 * time.Second,
-						ForceAttemptHTTP2:   true,
-						Proxy:               http.ProxyURL(proxyServer),
-					},
-				},
+				Index:  0,
+				Client: scheduler.Client,
 			}
-
-			scheduler.Client = task.Client
 
 			workerChunks := make(chan Chunk)
 
@@ -235,10 +244,11 @@ func Download(
 		}
 
 		// Make a client.
-		scheduler.Client = newClient(protocol, proxyServer)
-		if scheduler.Client == nil {
-			scheduler.Client = http.DefaultClient
-		}
+		scheduler.Client = newClient(
+			protocol,
+			proxyServer,
+			headers,
+		)
 
 		// Automatically determine worker count.
 		if scheduler.MaxWorkers <= 0 {

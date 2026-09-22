@@ -11,4 +11,5 @@ var (
 	protocol                  string
 	downloadProxyServerString string
 	upstreamProxyServerString string
+	requestHeaders            []string
 )

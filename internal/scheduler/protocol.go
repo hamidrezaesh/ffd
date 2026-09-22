@@ -1,13 +1,10 @@
 package scheduler
 
 import (
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/quic-go/quic-go/http3"
 )
 
 /*
@@ -16,7 +13,7 @@ request using the specified HTTP protocol.
 
 It returns true if the request succeeds and false if it fails.
 */
-func checkAvailableProtocol(url string, client *http.Client) bool {
+func checkAvailableProtocol(url string, client *HeaderClient) bool {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return false
@@ -101,44 +98,17 @@ func (s *Scheduler) testProtocol(
 
 		testRange := ranges[0]
 
-		transport := &http.Transport{
-			MaxIdleConns:        16,
-			MaxIdleConnsPerHost: 16,
-			MaxConnsPerHost:     16,
-		}
+		client := newClient(
+			protocol,
+			proxyServer,
+			nil,
+		)
 
-		var client *http.Client
+		supported := checkAvailableProtocol(
+			s.URL,
+			client,
+		)
 
-		switch protocol {
-		case 1:
-			transport.TLSNextProto =
-				map[string]func(string, *tls.Conn) http.RoundTripper{}
-
-			client = &http.Client{
-				Transport: transport,
-			}
-
-		case 2:
-			transport.ForceAttemptHTTP2 = true
-
-			client = &http.Client{
-				Transport: transport,
-			}
-
-		case 3:
-			h3Transport := &http3.Transport{}
-
-			client = &http.Client{
-				Transport: h3Transport,
-				Timeout:   200 * time.Millisecond,
-			}
-		}
-
-		if proxyServer != nil && protocol != 3 {
-			transport.Proxy = http.ProxyURL(proxyServer)
-		}
-
-		supported := checkAvailableProtocol(s.URL, client)
 		if !supported {
 			continue
 		}

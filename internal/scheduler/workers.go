@@ -28,7 +28,7 @@ func nWorkers(
 	workers int,
 	startByte int64,
 	endByte int64,
-	client *http.Client,
+	client *HeaderClient,
 	progress *tracker.Progress,
 ) (<-chan Chunk, <-chan error) {
 	out := make(chan Chunk)
@@ -49,7 +49,9 @@ func nWorkers(
 		}
 
 		if client == nil {
-			client = http.DefaultClient
+			client = &HeaderClient{
+				Base: http.DefaultClient,
+			}
 		}
 
 		totalSize := endByte - startByte + 1

@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/engine"
 	"github.com/hamidrezaesh/ffd/internal/formatter"
+	"github.com/hamidrezaesh/ffd/internal/scheduler"
 	"github.com/spf13/cobra"
 )
 
@@ -118,6 +120,21 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		headers := scheduler.Headers{}
+
+		for _, value := range requestHeaders {
+			parts := strings.SplitN(value, ":", 2)
+			if len(parts) != 2 || strings.TrimSpace(parts[0]) == "" {
+				fmt.Printf("Invalid header: %s\n", value)
+				return
+			}
+
+			headers = append(headers, scheduler.Header{
+				Key:   strings.TrimSpace(parts[0]),
+				Value: strings.TrimSpace(parts[1]),
+			})
+		}
+
 		// Countdown
 		if wait > 0 {
 			for i := wait; i > 0; i-- {
@@ -137,6 +154,7 @@ var rootCmd = &cobra.Command{
 				URL:      url,
 				Path:     path,
 				Filename: output,
+				Headers:  headers,
 			}
 
 			err := downloadUrl(req)
@@ -164,6 +182,13 @@ func init() {
 	rootCmd.Flags().IntVarP(&maxChunks, "max-chunks", "c", 12, "Total parts of download")
 	rootCmd.Flags().StringVarP(&protocol, "protocol", "", "auto", "Protocol to use")
 	rootCmd.Flags().StringVar(&downloadProxyServerString, "set-proxy", "", "Set proxy server")
+	rootCmd.Flags().StringArrayVar(
+		&requestHeaders,
+		"header",
+		nil,
+		"Add HTTP header (Header: Value)",
+	)
+
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		fmt.Println(commandsHelp)
 	})
