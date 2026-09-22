@@ -54,6 +54,10 @@ func ensureConfig() (string, error) {
 				Key:   "User-Agent",
 				Value: fmt.Sprintf("ffd/%s", version.Version),
 			},
+			{
+				Key:   "Accept",
+				Value: "*/*",
+			},
 		},
 	}
 
