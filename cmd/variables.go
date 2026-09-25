@@ -13,4 +13,5 @@ var (
 	upstreamProxyServerString string
 	requestHeaders            []string
 	requestCookies            []string
+	requestCookieFile         string
 )

@@ -161,7 +161,7 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		// Set cookies.
+		// Set cookies from --cookie.
 		for _, value := range requestCookies {
 			parts := strings.SplitN(value, "=", 2)
 			if len(parts) != 2 || strings.TrimSpace(parts[0]) == "" {
@@ -182,6 +182,27 @@ var rootCmd = &cobra.Command{
 				}
 
 				jar.SetCookies(u, []*http.Cookie{cookie})
+			}
+		}
+
+		// Load cookies from Netscape cookie file.
+		if requestCookieFile != "" {
+			cookies, err := parseCookieFile(requestCookieFile)
+			if err != nil {
+				fmt.Printf("Failed to load cookie file: %v\n", err)
+				return
+			}
+
+			for _, rawURL := range args {
+				u, err := url.Parse(rawURL)
+				if err != nil {
+					fmt.Printf("Invalid URL: %s\n", rawURL)
+					return
+				}
+
+				for _, cookie := range cookies {
+					jar.SetCookies(u, []*http.Cookie{cookie.Cookie})
+				}
 			}
 		}
 
@@ -246,6 +267,13 @@ func init() {
 		"cookie",
 		nil,
 		"Add HTTP cookie (name=value)",
+	)
+
+	rootCmd.Flags().StringVar(
+		&requestCookieFile,
+		"cookie-file",
+		"",
+		"Load HTTP cookies from a Netscape cookie file",
 	)
 
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
