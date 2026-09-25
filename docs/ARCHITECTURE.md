@@ -17,10 +17,10 @@ ffd/
 │   ├── scheduler/
 │   ├── tracker/
 │   └── validator/
+│   └── version/
 ├── scripts/
 ├── docs/
 ├── test/
-├── version/
 ├── .gitignore
 ├── .goreleaser.yaml
 ├── main.go
