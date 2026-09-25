@@ -16,19 +16,21 @@ ffd <URL1> <URL2> <URL3>
 
 ### Options
 
-| Option                 | Short | Description                 | Default |
-| ---------------------- | ----- | --------------------------- | ------- |
-| `--output NAME`        | `-o`  | Custom output filename      | —       |
-| `--wait SECONDS`       | `-w`  | Wait before downloading     | —       |
-| `--path PATH`          | `-p`  | Output directory            | `.`     |
-| `--max-retries NUMBER` | `-r`  | Maximum retries             | `4`     |
-| `--max-workers NUMBER` | `-W`  | Maximum concurrent workers  | `8`     |
-| `--max-chunks NUMBER`  | `-c`  | Maximum download chunks     | `12`    |
-| `--protocol PROTOCOL`  | —     | HTTP protocol to use        | `auto`  |
-| `--header HEADER`      | —     | Add an HTTP header          | —       |
-| `--set-proxy PROXY`    | —     | Set a proxy for downloading | —       |
-| `--help`               | `-h`  | Show help                   | —       |
-| `--version`            | `-v`  | Show version                | —       |
+| Option                 | Short | Description                              | Default |
+| ---------------------- | ----- | ---------------------------------------- | ------- |
+| `--output NAME`        | `-o`  | Custom output filename                   | —       |
+| `--wait SECONDS`       | `-w`  | Wait before downloading                  | —       |
+| `--path PATH`          | `-p`  | Output directory                         | `.`     |
+| `--max-retries NUMBER` | `-r`  | Maximum retries                          | `4`     |
+| `--max-workers NUMBER` | `-W`  | Maximum concurrent workers               | `8`     |
+| `--max-chunks NUMBER`  | `-c`  | Maximum download chunks                  | `12`    |
+| `--protocol PROTOCOL`  | —     | HTTP protocol to use                     | `auto`  |
+| `--header HEADER`      | —     | Add an HTTP header                       | —       |
+| `--cookie COOKIE`      | —     | Add an HTTP cookie                       | —       |
+| `--cookie-file FILE`   | —     | Load cookies from a Netscape-format file | —       |
+| `--set-proxy PROXY`    | —     | Set a proxy for downloading              | —       |
+| `--help`               | `-h`  | Show help                                | —       |
+| `--version`            | `-v`  | Show version                             | —       |
 
 ### Examples
 
@@ -73,11 +75,56 @@ Add a custom HTTP header:
 ```bash
 ffd <URL> --header "User-Agent: Mozilla/5.0"
 ```
+
 Set a proxy for downloading:
 
 ```bash
 ffd <URL> --set-proxy http://127.0.0.1:8000
 ```
+
+### Headers
+
+Set a custom HTTP request header:
+
+```bash
+ffd <URL> --header "User-Agent: Mozilla/5.0"
+```
+
+Multiple headers can be specified:
+
+```bash
+ffd <URL> \
+  --header "User-Agent: Mozilla/5.0" \
+  --header "Referer: https://example.com/"
+```
+
+### Cookies
+
+#### `--cookie`
+
+Set a cookie for the request using `name=value` format:
+
+```bash
+ffd <URL> --cookie "session=abc123"
+```
+
+Multiple cookies can be specified:
+
+```bash
+ffd <URL> \
+  --cookie "session=abc123" \
+  --cookie "theme=dark"
+```
+
+#### `--cookie-file`
+
+Load cookies from a Netscape-format cookie file:
+
+```bash
+ffd <URL> --cookie-file cookies.txt
+```
+
+Cookie domain, path, expiration, and security rules determine when cookies are sent.
 
 ---
 
