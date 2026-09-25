@@ -7,6 +7,7 @@ All notable changes to FFD are documented in this file.
 ### Added
 * Added HTTP Header support
 * Added configuration file support.
+* Added HTTP cookie support.
 
 ### Changed
 
