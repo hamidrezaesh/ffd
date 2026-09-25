@@ -135,6 +135,7 @@ func Download(
 	totalSize int64,
 	proxyServer *url.URL,
 	headers Headers,
+	jar http.CookieJar,
 	progress *tracker.Progress,
 	acceptRange bool,
 	maxRetries int,
@@ -174,6 +175,7 @@ func Download(
 					IdleConnTimeout:     90 * time.Second,
 					ForceAttemptHTTP2:   true,
 				},
+				Jar: jar,
 			}
 
 			if proxyServer != nil {
@@ -227,6 +229,7 @@ func Download(
 		if preferredProtocol == 0 {
 			finalProtocol, nextByte, err := scheduler.testProtocol(
 				proxyServer,
+				jar,
 				startByte,
 				func(chunk Chunk) {
 					out <- chunk
@@ -248,6 +251,7 @@ func Download(
 			protocol,
 			proxyServer,
 			headers,
+			jar,
 		)
 
 		// Automatically determine worker count.

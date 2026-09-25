@@ -12,4 +12,5 @@ var (
 	downloadProxyServerString string
 	upstreamProxyServerString string
 	requestHeaders            []string
+	requestCookies            []string
 )

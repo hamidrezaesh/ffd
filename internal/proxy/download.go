@@ -51,6 +51,7 @@ func (s *Server) proxyAccelerated(
 		totalSize,
 		s.Proxy,
 		nil,
+		nil,
 		progress,
 		true,
 		maxRetries,

@@ -17,6 +17,7 @@ type Request struct {
 	Path     string
 	Filename string
 	Headers  scheduler.Headers
+	Jar      http.CookieJar
 }
 
 type Result struct {
@@ -41,7 +42,9 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, prefer
 	}
 
 	client := &scheduler.HeaderClient{
-		Base:    http.DefaultClient,
+		Base: &http.Client{
+			Jar: req.Jar,
+		},
 		Headers: req.Headers,
 	}
 
@@ -103,6 +106,7 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, prefer
 			md.TotalSize,
 			proxyServer,
 			req.Headers,
+			req.Jar,
 			progress,
 			md.AcceptRanges,
 			maxRetries,

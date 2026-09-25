@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"strings"
@@ -122,14 +124,14 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		// load configs
+		// Load config.
 		cfg, err := config.GetConfig()
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			return
 		}
 
-		// set headers
+		// Set headers.
 		headers := scheduler.Headers{}
 
 		for _, header := range cfg.Headers {
@@ -152,6 +154,37 @@ var rootCmd = &cobra.Command{
 			})
 		}
 
+		// Create cookie jar.
+		jar, err := cookiejar.New(nil)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+
+		// Set cookies.
+		for _, value := range requestCookies {
+			parts := strings.SplitN(value, "=", 2)
+			if len(parts) != 2 || strings.TrimSpace(parts[0]) == "" {
+				fmt.Printf("Invalid cookie: %s\n", value)
+				return
+			}
+
+			cookie := &http.Cookie{
+				Name:  strings.TrimSpace(parts[0]),
+				Value: strings.TrimSpace(parts[1]),
+			}
+
+			for _, rawURL := range args {
+				u, err := url.Parse(rawURL)
+				if err != nil {
+					fmt.Printf("Invalid URL: %s\n", rawURL)
+					return
+				}
+
+				jar.SetCookies(u, []*http.Cookie{cookie})
+			}
+		}
+
 		// Countdown
 		if wait > 0 {
 			for i := wait; i > 0; i-- {
@@ -172,6 +205,7 @@ var rootCmd = &cobra.Command{
 				Path:     path,
 				Filename: output,
 				Headers:  headers,
+				Jar:      jar,
 			}
 
 			err := downloadUrl(req)
@@ -199,11 +233,19 @@ func init() {
 	rootCmd.Flags().IntVarP(&maxChunks, "max-chunks", "c", 12, "Total parts of download")
 	rootCmd.Flags().StringVarP(&protocol, "protocol", "", "auto", "Protocol to use")
 	rootCmd.Flags().StringVar(&downloadProxyServerString, "set-proxy", "", "Set proxy server")
+
 	rootCmd.Flags().StringArrayVar(
 		&requestHeaders,
 		"header",
 		nil,
 		"Add HTTP header (Header: Value)",
+	)
+
+	rootCmd.Flags().StringArrayVar(
+		&requestCookies,
+		"cookie",
+		nil,
+		"Add HTTP cookie (name=value)",
 	)
 
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {

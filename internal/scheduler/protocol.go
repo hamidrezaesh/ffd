@@ -42,6 +42,7 @@ HTTP/2 and HTTP/2 over HTTP/1.1.
 */
 func (s *Scheduler) testProtocol(
 	proxyServer *url.URL,
+	jar http.CookieJar,
 	startByte int64,
 	emit func(Chunk),
 ) (int, int64, error) {
@@ -102,6 +103,7 @@ func (s *Scheduler) testProtocol(
 			protocol,
 			proxyServer,
 			nil,
+			jar,
 		)
 
 		supported := checkAvailableProtocol(

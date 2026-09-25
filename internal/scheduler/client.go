@@ -46,6 +46,7 @@ func newClient(
 	protocol int,
 	proxyServer *url.URL,
 	headers Headers,
+	jar http.CookieJar,
 ) *HeaderClient {
 	var client *http.Client
 
@@ -65,6 +66,7 @@ func newClient(
 
 		client = &http.Client{
 			Transport: transport,
+			Jar:       jar,
 		}
 
 	case 2: // HTTP/2
@@ -82,6 +84,7 @@ func newClient(
 
 		client = &http.Client{
 			Transport: transport,
+			Jar:       jar,
 		}
 
 	case 3: // HTTP/3
@@ -89,6 +92,7 @@ func newClient(
 
 		client = &http.Client{
 			Transport: transport,
+			Jar:       jar,
 		}
 
 	default:
