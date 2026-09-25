@@ -16,19 +16,8 @@
 
 ## Features
 
-* Multi-segment downloads
-* Automatic file metadata detection
-* Automatic filename detection
-* Download progress tracking
-* Download speed display
-* Estimated time remaining
-* Custom filenames
-* Custom download paths
-* Delayed downloads
-* Cross-platform Go implementation
-* Automatically distributes download chunks among workers for better performance.
-* Dynamic worker selection while downloading.
 * Built-in proxy — Use FFD as a local HTTP forward proxy.
+* Support for custom HTTP headers and cookies, including Netscape-format cookie files.
 
 ## Installation
 
@@ -91,9 +80,10 @@ If the server does not support range requests, `ffd` automatically falls back to
 ```text
 ffd/
 ├── .github/
-|   ├── workflows/
+│   └── workflows/
 ├── cmd/
 ├── internal/
+│   ├── config/
 │   ├── disk/
 │   ├── engine/
 │   ├── formatter/
@@ -102,14 +92,15 @@ ffd/
 │   ├── scheduler/
 │   ├── tracker/
 │   └── validator/
+│   └── version/
 ├── scripts/
 ├── docs/
+├── test/
 ├── .gitignore
 ├── .goreleaser.yaml
 ├── main.go
-├── CONTRIBUTING.md
-├── CHANGELOG.md
 ├── go.mod
+├── CONTRIBUTING.md
 ├── go.sum
 ├── README.md
 └── LICENSE
