@@ -4,6 +4,15 @@ All notable changes to FFD are documented in this file.
 
 ## [Unreleased]
 
+*Nothing Yet*
+
+## v0.3.21
+
+### Fixed
+* Fixed version injection in release builds.
+
+## v0.3.2
+
 ### Added
 * Added HTTP Header support
 * Added configuration file support.
