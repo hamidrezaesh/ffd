@@ -19,10 +19,12 @@ It prints information about every incoming request, including:
 - Remote address
 - Host
 - Request headers
+- Request cookies
 - Request body
 
 It can be used to test features such as:
 - Custom HTTP headers
+- HTTP cookies
 - HTTP protocol selection
 - Range requests
 - Proxy behavior
@@ -36,9 +38,13 @@ The server listens on:
 
 	http://localhost:8080
 
-then you can run tests such as
+Then you can run tests such as:
+
 	ffd --header="User-Agent: FFD" http://localhost:8080
-to see if the ffd's new feature is working or not
+
+	ffd --cookie="session=abc123" http://localhost:8080
+
+to see if FFD's new features are working correctly.
 
 This is a development and debugging tool and is not intended for production use.
 */
@@ -58,6 +64,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	for key, values := range r.Header {
 		for _, value := range values {
 			fmt.Printf("  %s: %s\n", key, value)
+		}
+	}
+
+	fmt.Println("\nCookies:")
+	cookies := r.Cookies()
+
+	if len(cookies) == 0 {
+		fmt.Println("  (none)")
+	} else {
+		for _, cookie := range cookies {
+			fmt.Printf("  %s=%s\n", cookie.Name, cookie.Value)
 		}
 	}
 
