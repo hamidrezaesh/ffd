@@ -6,7 +6,7 @@
 
 **Fast File Downloader**
 
-[v0.3.13](https://github.com/hamidrezaesh/ffd/releases)|
+[v0.3.21](https://github.com/hamidrezaesh/ffd/releases)|
 [Website](https://ffd-cli.pages.dev)|
 [Issue](https://github.com/hamidrezaesh/ffd/issues)
 
