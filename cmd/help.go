@@ -38,6 +38,15 @@ Example: ffd <URL> --protocol http2
 
 --set-proxy PROXY    Set proxy server for download
 Example: ffd <URL> --set-proxy your-proxy
+
+--header HEADER		Set custom header
+Example: ffd <URL> --header "User-Agent: Mozilla/5.0"
+
+--cookie COOKIE		Set custom cookie (default "")
+Example: ffd <URL> --cookie "session=abc123"
+
+--cookie-file		Load cookie from file
+Example: ffd <URL> --cookie-file cookies.txt
 `
 
 var proxyHelp string = `usage: ffd proxy [OPTION]
