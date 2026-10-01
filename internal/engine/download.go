@@ -27,16 +27,26 @@ type Result struct {
 	Done     chan error
 }
 
-func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, preferredProtocol int, proxyServer *url.URL) (*Result, error) {
+func Download(
+	req Request,
+	maxRetries int,
+	maxWorkers int,
+	maxChunks int,
+	preferredProtocol int,
+	proxyServer *url.URL,
+) (*Result, error) {
 	if maxRetries == 0 {
 		maxRetries = 4
 	}
+
 	if maxWorkers == 0 {
 		maxWorkers = 8
 	}
+
 	if maxChunks == 0 {
 		maxChunks = 12
 	}
+
 	if maxWorkers > maxChunks {
 		maxWorkers = maxChunks
 	}
@@ -48,44 +58,41 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, prefer
 		Headers: req.Headers,
 	}
 
-	// Get a response
+	// Get a response.
 	resp, err := client.Head(req.URL)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	// Fetch metadata
+	// Fetch metadata.
 	md, err := metadata.FetchMetadata(req.URL, resp)
 	if err != nil {
 		return nil, err
 	}
 
-	// Use custom filename if provided
+	// Use custom filename if provided.
 	filename := md.Filename
-
 	if req.Filename != "" {
 		filename = req.Filename
 	}
 
-	// Validate filename
+	// Validate filename.
 	if err := validator.Filename(filename); err != nil {
 		return nil, err
 	}
 
-	// Allocate file
 	fileInfo := disk.FileInfo{
 		Filename:  filename + md.Ext,
 		Path:      filepath.Join(req.Path, filename+md.Ext),
 		TotalSize: md.TotalSize,
 	}
 
-	file, err := disk.Allocate(fileInfo)
+	download, err := newDownload(fileInfo)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create progress tracker
 	progress := tracker.New(md.TotalSize)
 	progress.Start()
 
@@ -97,9 +104,7 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, prefer
 	}
 
 	go func() {
-		defer file.Close()
 		defer progress.Stop()
-		defer close(result.Done)
 
 		chanChunks, chanErr := scheduler.Download(
 			req.URL,
@@ -123,7 +128,8 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, prefer
 					continue
 				}
 
-				if _, err := file.WriteAt(chunk.Bytes, chunk.Offset); err != nil {
+				if err := download.Write(chunk); err != nil {
+					_ = download.Close()
 					result.Done <- err
 					return
 				}
@@ -135,11 +141,16 @@ func Download(req Request, maxRetries int, maxWorkers int, maxChunks int, prefer
 				}
 
 				if err != nil {
+					_ = download.Close()
 					result.Done <- err
+					return
 				}
-
-				return
 			}
+		}
+
+		if err := download.Close(); err != nil {
+			result.Done <- err
+			return
 		}
 
 		result.Done <- nil
