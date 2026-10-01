@@ -8,12 +8,6 @@ import (
 	"path/filepath"
 )
 
-type FileInfo struct {
-	Filename  string
-	Path      string
-	TotalSize int64
-}
-
 func Create(f FileInfo) (*os.File, error) {
 	dir := filepath.Dir(f.Path)
 
