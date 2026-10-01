@@ -13,7 +13,7 @@ import (
 	"github.com/hamidrezaesh/ffd/internal/engine"
 	"github.com/hamidrezaesh/ffd/internal/formatter"
 	"github.com/hamidrezaesh/ffd/internal/scheduler"
-	"github.com/hamidrezaesh/ffd/internal/version"
+	"github.com/hamidrezaesh/ffd/version"
 	"github.com/spf13/cobra"
 )
 

@@ -7,7 +7,7 @@ import (
 	"runtime"
 
 	"github.com/BurntSushi/toml"
-	"github.com/hamidrezaesh/ffd/internal/version"
+	"github.com/hamidrezaesh/ffd/version"
 )
 
 type Header struct {

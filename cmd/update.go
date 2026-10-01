@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/hamidrezaesh/ffd/internal/version"
+	"github.com/hamidrezaesh/ffd/version"
 	"github.com/spf13/cobra"
 )
 
