@@ -17,9 +17,10 @@ type Task struct {
 }
 
 type Chunk struct {
-	Index  int
-	Offset int64
-	Bytes  []byte
+	Index      int
+	RangeStart int64
+	Offset     int64
+	Bytes      []byte
 }
 
 func fetchFromOffset(
@@ -57,9 +58,10 @@ func fetchFromOffset(
 			data := append([]byte(nil), buf[:n]...)
 
 			chunks <- Chunk{
-				Index:  t.Index,
-				Offset: *offset,
-				Bytes:  data,
+				Index:      t.Index,
+				RangeStart: t.Range.Start,
+				Offset:     *offset,
+				Bytes:      data,
 			}
 
 			progress.AddDownloaded(int64(n))
