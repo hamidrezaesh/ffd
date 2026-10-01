@@ -1,3 +1,5 @@
+//go:build !windows
+
 package disk
 
 import (
@@ -12,7 +14,7 @@ type FileInfo struct {
 	TotalSize int64
 }
 
-func Allocate(f FileInfo) (*os.File, error) {
+func Create(f FileInfo) (*os.File, error) {
 	dir := filepath.Dir(f.Path)
 
 	// Check free disk space
@@ -35,12 +37,6 @@ func Allocate(f FileInfo) (*os.File, error) {
 	// Create file
 	file, err := os.Create(f.Path)
 	if err != nil {
-		return nil, err
-	}
-
-	// Pre-allocate file size
-	if err := file.Truncate(f.TotalSize); err != nil {
-		file.Close()
 		return nil, err
 	}
 
