@@ -6,83 +6,86 @@ import (
 	"os"
 )
 
-func Init(path string, state DownloadState) error {
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	file, err := os.OpenFile(
-		path,
-		os.O_WRONLY|os.O_CREATE|os.O_EXCL,
-		0644,
-	)
-	if err != nil {
-		if os.IsExist(err) {
-			return nil
-		}
-		return err
-	}
-	defer file.Close()
-
-	_, err = file.Write(data)
-	return err
+type State struct {
+	path string
+	data DownloadState
 }
 
-func Load(statePath string) (*DownloadState, error) {
-	file, err := os.Open(statePath)
+func GetStatePath(filePath string) string {
+	return filePath + ".ffd"
+}
+
+func Init(path string, data DownloadState) (*State, error) {
+	state := &State{
+		path: path,
+		data: data,
+	}
+
+	if err := state.Save(); err != nil {
+		return nil, err
+	}
+
+	return state, nil
+}
+
+func Load(path string) (*State, error) {
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	var state DownloadState
+	var data DownloadState
 
 	decoder := json.NewDecoder(file)
 	decoder.DisallowUnknownFields()
 
-	if err := decoder.Decode(&state); err != nil {
+	if err := decoder.Decode(&data); err != nil {
 		return nil, fmt.Errorf("invalid state file: %w", err)
 	}
 
-	return &state, nil
+	return &State{
+		path: path,
+		data: data,
+	}, nil
 }
 
-func AddChunk(path string, chunk ChunkState) error {
-	state, err := Load(path)
+func (s *State) AddChunk(chunk ChunkState) {
+	for _, existing := range s.data.Chunks {
+		if existing.Index == chunk.Index {
+			return
+		}
+	}
+
+	s.data.Chunks = append(s.data.Chunks, chunk)
+}
+
+func (s *State) UpdateChunk(index int, downloaded int64) error {
+	for i := range s.data.Chunks {
+		if s.data.Chunks[i].Index != index {
+			continue
+		}
+
+		if downloaded < 0 || downloaded > s.data.Chunks[i].Size {
+			return fmt.Errorf("invalid downloaded value: %d", downloaded)
+		}
+
+		s.data.Chunks[i].Downloaded = downloaded
+		return nil
+	}
+
+	return fmt.Errorf("chunk not found: %d", index)
+}
+
+func (s *State) Save() error {
+	data, err := json.MarshalIndent(s.data, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	state.Chunks = append(state.Chunks, chunk)
-
-	return save(path, *state)
+	return os.WriteFile(s.path, data, 0644)
 }
 
-func UpdateChunk(statePath string, index int, downloaded int64) error {
-	state, err := Load(statePath)
-	if err != nil {
-		return err
-	}
-
-	if index < 0 || index >= len(state.Chunks) {
-		return fmt.Errorf("chunk index out of range: %d", index)
-	}
-
-	if downloaded < 0 || downloaded > state.Chunks[index].Size {
-		return fmt.Errorf("invalid downloaded value: %d", downloaded)
-	}
-
-	state.Chunks[index].Downloaded = downloaded
-
-	return save(statePath, *state)
-}
-
-func save(path string, state DownloadState) error {
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(path, data, 0644)
+func (s *State) Data() DownloadState {
+	return s.data
 }
