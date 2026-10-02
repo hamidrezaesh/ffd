@@ -4,6 +4,7 @@ type DownloadState struct {
 	URL       string       `json:"url"`
 	Filename  string       `json:"filename"`
 	TotalSize int64        `json:"total_size"`
+	Protocol  string       `json:"protocol"`
 	Chunks    []ChunkState `json:"chunks"`
 }
 
