@@ -8,6 +8,7 @@ import (
 	"github.com/hamidrezaesh/ffd/internal/disk"
 	"github.com/hamidrezaesh/ffd/internal/metadata"
 	"github.com/hamidrezaesh/ffd/internal/scheduler"
+	"github.com/hamidrezaesh/ffd/internal/state"
 	"github.com/hamidrezaesh/ffd/internal/tracker"
 	"github.com/hamidrezaesh/ffd/internal/validator"
 )
@@ -37,14 +38,6 @@ func Download(
 ) (*Result, error) {
 	if maxRetries == 0 {
 		maxRetries = 4
-	}
-
-	if maxWorkers == 0 {
-		maxWorkers = 8
-	}
-
-	if maxChunks == 0 {
-		maxChunks = 12
 	}
 
 	if maxWorkers > maxChunks {
@@ -82,11 +75,22 @@ func Download(
 		return nil, err
 	}
 
+	// define path
+	filePath := filepath.Join(req.Path, filename+md.Ext)
+
 	fileInfo := disk.FileInfo{
 		Filename:  filename + md.Ext,
-		Path:      filepath.Join(req.Path, filename+md.Ext),
+		Path:      filePath,
 		TotalSize: md.TotalSize,
 	}
+
+	// check and initial state
+	downloadState := state.DownloadState{
+		URL:       req.URL,
+		Filename:  filename,
+		TotalSize: fileInfo.TotalSize,
+	}
+	err = state.Init(filePath)
 
 	download, err := newDownload(fileInfo)
 	if err != nil {
