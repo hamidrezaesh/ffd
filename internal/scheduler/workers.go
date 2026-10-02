@@ -137,6 +137,7 @@ func nWorkers(
 							RangeSize:  end - start + 1,
 							Offset:     offset,
 							Bytes:      data,
+							Test:       true,
 						}
 
 						if progress != nil {

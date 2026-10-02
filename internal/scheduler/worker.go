@@ -22,6 +22,7 @@ type Chunk struct {
 	RangeSize  int64
 	Offset     int64
 	Bytes      []byte
+	Test       bool
 }
 
 type ResumeChunk struct {
@@ -70,6 +71,7 @@ func fetchFromOffset(
 				RangeSize:  t.Range.End - t.Range.Start + 1,
 				Offset:     *offset,
 				Bytes:      data,
+				Test:       false,
 			}
 
 			progress.AddDownloaded(int64(n))
