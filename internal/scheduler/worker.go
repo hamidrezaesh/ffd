@@ -24,6 +24,12 @@ type Chunk struct {
 	Bytes      []byte
 }
 
+type ResumeChunk struct {
+	Index      int
+	Range      ByteRange
+	Downloaded int64
+}
+
 func fetchFromOffset(
 	t Task,
 	progress *tracker.Progress,
@@ -84,6 +90,7 @@ func fetchFromOffset(
 
 func Worker(
 	t Task,
+	resume ResumeChunk,
 	progress *tracker.Progress,
 	maxRetries int,
 	chunks chan<- Chunk,
@@ -92,7 +99,7 @@ func Worker(
 		maxRetries = 4
 	}
 
-	offset := t.Range.Start
+	offset := resume.Range.Start + resume.Downloaded
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		err := fetchFromOffset(

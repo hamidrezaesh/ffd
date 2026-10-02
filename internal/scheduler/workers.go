@@ -133,8 +133,10 @@ func nWorkers(
 						copy(data, buf[:n])
 
 						out <- Chunk{
-							Bytes:  data,
-							Offset: offset,
+							RangeStart: start,
+							RangeSize:  end - start + 1,
+							Offset:     offset,
+							Bytes:      data,
 						}
 
 						if progress != nil {
