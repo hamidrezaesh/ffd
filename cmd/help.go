@@ -47,6 +47,9 @@ Example: ffd <URL> --cookie "session=abc123"
 
 --cookie-file		Load cookie from file
 Example: ffd <URL> --cookie-file cookies.txt
+
+--overwrite   Overwrite an existing file and restart the download
+Example: ffd <URL> --overwrite
 `
 
 var proxyHelp string = `usage: ffd proxy [OPTION]

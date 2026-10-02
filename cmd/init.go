@@ -15,6 +15,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&maxChunks, "max-chunks", "c", 12, "Total parts of download")
 	rootCmd.Flags().StringVarP(&protocol, "protocol", "", "auto", "Protocol to use")
 	rootCmd.Flags().StringVar(&downloadProxyServerString, "set-proxy", "", "Set proxy server")
+	rootCmd.Flags().BoolVarP(&overwrite, "overwrite", "", false, "Overwrite downloaded file and start fresh")
 
 	rootCmd.Flags().StringArrayVar(
 		&requestHeaders,

@@ -36,6 +36,7 @@ func Download(
 	maxChunks int,
 	preferredProtocol int,
 	proxyServer *url.URL,
+	overwrite bool,
 ) (*Result, error) {
 	if maxRetries == 0 {
 		maxRetries = 4
@@ -85,21 +86,41 @@ func Download(
 		TotalSize: md.TotalSize,
 	}
 
-	// check and initial state
+	// Check and initialize state.
 	statePath := state.GetStatePath(filePath)
-	downloadState, err := state.Load(statePath)
-	if err != nil {
-		if os.IsNotExist(err) { // if state doesnt exists, initial it.
-			downloadState, err = state.Init(statePath, state.DownloadState{
-				URL:       req.URL,
-				Filename:  filename,
-				TotalSize: fileInfo.TotalSize,
-				Chunks:    []state.ChunkState{},
-			})
-		}
 
+	var downloadState *state.State
+
+	if overwrite {
+		// Start a completely fresh download.
+		_ = os.Remove(statePath)
+
+		downloadState, err = state.Init(statePath, state.DownloadState{
+			URL:       req.URL,
+			Filename:  filename,
+			TotalSize: fileInfo.TotalSize,
+			Chunks:    []state.ChunkState{},
+		})
 		if err != nil {
 			return nil, err
+		}
+	} else {
+		// Resume existing download if a state file exists.
+		downloadState, err = state.Load(statePath)
+
+		if err != nil {
+			if os.IsNotExist(err) {
+				downloadState, err = state.Init(statePath, state.DownloadState{
+					URL:       req.URL,
+					Filename:  filename,
+					TotalSize: fileInfo.TotalSize,
+					Chunks:    []state.ChunkState{},
+				})
+			}
+
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

@@ -14,4 +14,5 @@ var (
 	requestHeaders            []string
 	requestCookies            []string
 	requestCookieFile         string
+	overwrite                 bool
 )

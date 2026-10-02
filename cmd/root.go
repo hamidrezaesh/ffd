@@ -49,7 +49,7 @@ func downloadUrl(req engine.Request) error {
 	startTime := time.Now()
 
 	// Start download.
-	result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks, useProtocol, proxyServer)
+	result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks, useProtocol, proxyServer, overwrite)
 
 	if err != nil {
 		fmt.Printf(
