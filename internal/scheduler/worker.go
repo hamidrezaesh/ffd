@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hamidrezaesh/ffd/internal/tracker"
@@ -42,9 +43,11 @@ func fetchFromOffset(
 		return err
 	}
 
+	requestStart := *offset
+
 	req.Header.Set(
 		"Range",
-		fmt.Sprintf("bytes=%d-%d", *offset, t.Range.End),
+		fmt.Sprintf("bytes=%d-%d", requestStart, t.Range.End),
 	)
 
 	resp, err := t.Client.Do(req)
@@ -55,6 +58,23 @@ func fetchFromOffset(
 
 	if resp.StatusCode != http.StatusPartialContent {
 		return fmt.Errorf("unexpected HTTP status: %v", resp.Status)
+	}
+
+	// Verify that the server actually started the response
+	// at the byte ffd requested.
+	contentRange := resp.Header.Get("Content-Range")
+
+	expectedPrefix := fmt.Sprintf(
+		"bytes %d-",
+		requestStart,
+	)
+
+	if !strings.HasPrefix(contentRange, expectedPrefix) {
+		return fmt.Errorf(
+			"unexpected Content-Range: %q, expected start %d",
+			contentRange,
+			requestStart,
+		)
 	}
 
 	buf := make([]byte, 128*1024)
