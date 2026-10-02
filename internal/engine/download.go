@@ -87,7 +87,6 @@ func Download(
 
 	// check and initial state
 	statePath := state.GetStatePath(filePath)
-
 	downloadState, err := state.Load(statePath)
 	if err != nil {
 		if os.IsNotExist(err) { // if state doesnt exists, initial it.
@@ -109,7 +108,31 @@ func Download(
 		return nil, err
 	}
 
+	// initial progress tracker
 	progress := tracker.New(md.TotalSize)
+
+	// add downloaded bytes to tracker
+	for _, chunk := range downloadState.Data().Chunks {
+		if chunk.Downloaded > 0 {
+			progress.AddDownloaded(chunk.Downloaded)
+		}
+	}
+
+	// save downloaded chunks to resumeChunks
+	resumeChunks := make([]scheduler.ResumeChunk, 0, len(downloadState.Data().Chunks))
+
+	for _, chunk := range downloadState.Data().Chunks {
+		resumeChunks = append(resumeChunks, scheduler.ResumeChunk{
+			Index: chunk.Index,
+			Range: scheduler.ByteRange{
+				Start: chunk.Offset,
+				End:   chunk.Offset + chunk.Size - 1,
+			},
+			Downloaded: chunk.Downloaded,
+		})
+	}
+
+	// start tracker
 	progress.Start()
 
 	result := &Result{
@@ -134,6 +157,7 @@ func Download(
 			maxWorkers,
 			maxChunks,
 			preferredProtocol,
+			resumeChunks,
 		)
 
 		for chanChunks != nil || chanErr != nil {
