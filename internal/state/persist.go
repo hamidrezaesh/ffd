@@ -93,3 +93,7 @@ func (s *State) Save() error {
 func (s *State) Data() DownloadState {
 	return s.data
 }
+
+func (s *State) SetPlan(chunks []ChunkState) {
+	s.data.Chunks = chunks
+}
