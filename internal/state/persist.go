@@ -53,37 +53,34 @@ func Load(path string) (*State, error) {
 
 func (s *State) AddChunk(chunk ChunkState) {
 	for i := range s.data.Chunks {
-		if s.data.Chunks[i].Index != chunk.Index {
+		if s.data.Chunks[i].Offset != chunk.Offset {
 			continue
 		}
 
-		s.data.Chunks[i].Offset = chunk.Offset
+		s.data.Chunks[i].Index = chunk.Index
 		s.data.Chunks[i].Size = chunk.Size
-
 		return
 	}
 
 	s.data.Chunks = append(s.data.Chunks, chunk)
 }
 
-func (s *State) UpdateChunk(index int, downloaded int64) error {
+func (s *State) UpdateChunk(offset int64, downloaded int64) error {
 	for i := range s.data.Chunks {
-		if s.data.Chunks[i].Index != index {
+		if s.data.Chunks[i].Offset != offset {
 			continue
 		}
 
 		if downloaded < 0 || downloaded > s.data.Chunks[i].Size {
-			return fmt.Errorf("invalid downloaded value: %d\nSEcond:\n%v",
-				downloaded, s.data.Chunks[i].Size)
+			return fmt.Errorf("invalid downloaded value: %d", downloaded)
 		}
 
 		s.data.Chunks[i].Downloaded = downloaded
 		return nil
 	}
 
-	return fmt.Errorf("chunk not found: %d", index)
+	return fmt.Errorf("chunk not found at offset: %d", offset)
 }
-
 func (s *State) Save() error {
 	data, err := json.MarshalIndent(s.data, "", "  ")
 	if err != nil {
