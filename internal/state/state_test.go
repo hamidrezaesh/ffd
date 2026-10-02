@@ -26,7 +26,6 @@ func TestState(t *testing.T) {
 		Filename:  "test.bin",
 		URL:       "https://example.com/test.bin",
 		TotalSize: 300 * 1024 * 1024,
-		Protocol:  "HTTP/1.1",
 		Chunks:    []ChunkState{},
 	}
 
@@ -37,6 +36,7 @@ func TestState(t *testing.T) {
 	}
 
 	printJSON(t, state.Data())
+	t.Log("\n\n")
 
 	// 2. Add first chunk
 	state.AddChunk(ChunkState{
@@ -51,6 +51,7 @@ func TestState(t *testing.T) {
 	}
 
 	printJSON(t, state.Data())
+	t.Log("\n\n")
 
 	// 3. Add second chunk
 	state.AddChunk(ChunkState{
@@ -65,6 +66,7 @@ func TestState(t *testing.T) {
 	}
 
 	printJSON(t, state.Data())
+	t.Log("\n\n")
 
 	// 4. Add existing chunk
 	state.AddChunk(ChunkState{
@@ -88,6 +90,7 @@ func TestState(t *testing.T) {
 	}
 
 	printJSON(t, state.Data())
+	t.Log("\n\n")
 
 	// 6. Load state again
 	loaded, err := Load(statePath)
@@ -96,4 +99,5 @@ func TestState(t *testing.T) {
 	}
 
 	printJSON(t, loaded.Data())
+	t.Log("\n\n")
 }
