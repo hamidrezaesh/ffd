@@ -174,27 +174,31 @@ func Download(
 					return
 				}
 
-				downloadState.AddChunk(state.ChunkState{
-					Index:      chunk.Index,
-					Offset:     chunk.RangeStart,
-					Size:       chunk.RangeSize,
-					Downloaded: 0,
-				})
+				// if chunks are test chunks, don't add them into state
+				if !chunk.Test {
+					downloadState.AddChunk(state.ChunkState{
+						Index:      chunk.Index,
+						Offset:     chunk.RangeStart,
+						Size:       chunk.RangeSize,
+						Downloaded: 0,
+					})
 
-				downloaded := chunk.Offset - chunk.RangeStart + int64(len(chunk.Bytes))
+					downloaded := chunk.Offset - chunk.RangeStart + int64(len(chunk.Bytes))
 
-				// Update value of a chunk in state
-				if err := downloadState.UpdateChunk(chunk.Index, downloaded); err != nil {
-					_ = download.Close()
-					result.Done <- err
-					return
-				}
+					if err := downloadState.UpdateChunk(
+						chunk.RangeStart,
+						downloaded,
+					); err != nil {
+						_ = download.Close()
+						result.Done <- err
+						return
+					}
 
-				// and then save it
-				if err := downloadState.Save(); err != nil {
-					_ = download.Close()
-					result.Done <- err
-					return
+					if err := downloadState.Save(); err != nil {
+						_ = download.Close()
+						result.Done <- err
+						return
+					}
 				}
 
 			case err, ok := <-chanErr:
