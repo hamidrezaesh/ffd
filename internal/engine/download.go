@@ -3,6 +3,7 @@ package engine
 import (
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	"github.com/hamidrezaesh/ffd/internal/disk"
@@ -85,12 +86,23 @@ func Download(
 	}
 
 	// check and initial state
-	downloadState := state.DownloadState{
-		URL:       req.URL,
-		Filename:  filename,
-		TotalSize: fileInfo.TotalSize,
+	statePath := state.GetStatePath(filePath)
+
+	downloadState, err := state.Load(statePath)
+	if err != nil {
+		if os.IsNotExist(err) { // if state doesnt exists, initial it.
+			downloadState, err = state.Init(statePath, state.DownloadState{
+				URL:       req.URL,
+				Filename:  filename,
+				TotalSize: fileInfo.TotalSize,
+				Chunks:    []state.ChunkState{},
+			})
+		}
+
+		if err != nil {
+			return nil, err
+		}
 	}
-	err = state.Init(filePath)
 
 	download, err := newDownload(fileInfo)
 	if err != nil {
@@ -133,6 +145,29 @@ func Download(
 				}
 
 				if err := download.Write(chunk); err != nil {
+					_ = download.Close()
+					result.Done <- err
+					return
+				}
+
+				downloadState.AddChunk(state.ChunkState{
+					Index:      chunk.Index,
+					Offset:     chunk.RangeStart,
+					Size:       chunk.RangeSize,
+					Downloaded: 0,
+				})
+
+				downloaded := chunk.Offset - chunk.RangeStart + int64(len(chunk.Bytes))
+
+				// Update value of a chunk in state
+				if err := downloadState.UpdateChunk(chunk.Index, downloaded); err != nil {
+					_ = download.Close()
+					result.Done <- err
+					return
+				}
+
+				// and then save it
+				if err := downloadState.Save(); err != nil {
 					_ = download.Close()
 					result.Done <- err
 					return
