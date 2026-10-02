@@ -59,6 +59,7 @@ func (s *Server) proxyAccelerated(
 		maxChunks,
 		0,
 		nil,
+		nil,
 	)
 
 	// Copy upstream response metadata

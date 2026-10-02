@@ -158,6 +158,22 @@ func Download(
 			maxChunks,
 			preferredProtocol,
 			resumeChunks,
+			func(plan []scheduler.ResumeChunk) error {
+				chunks := make([]state.ChunkState, 0, len(plan))
+
+				for _, r := range plan {
+					chunks = append(chunks, state.ChunkState{
+						Index:      r.Index,
+						Offset:     r.Range.Start,
+						Size:       r.Range.End - r.Range.Start + 1,
+						Downloaded: 0,
+					})
+				}
+
+				downloadState.SetPlan(chunks)
+
+				return downloadState.Save()
+			},
 		)
 
 		for chanChunks != nil || chanErr != nil {

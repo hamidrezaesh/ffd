@@ -24,6 +24,7 @@ type Scheduler struct {
 	MaxWorkers   int
 	MaxChunks    int
 	ResumeChunks []ResumeChunk
+	OnPlan       func([]ResumeChunk) error
 }
 
 /*
@@ -67,6 +68,13 @@ func (s *Scheduler) fetchChunks(
 					Index: i,
 					Range: r,
 				})
+			}
+
+			if s.OnPlan != nil {
+				if err := s.OnPlan(ranges); err != nil {
+					errCh <- err
+					return
+				}
 			}
 		}
 
@@ -177,6 +185,7 @@ func Download(
 	maxChunks int,
 	preferredProtocol int,
 	resumeChunks []ResumeChunk,
+	onPlan func([]ResumeChunk) error,
 ) (<-chan Chunk, <-chan error) {
 	scheduler := &Scheduler{
 		MaxRetries:   maxRetries,
@@ -187,6 +196,7 @@ func Download(
 		MaxWorkers:   maxWorkers,
 		MaxChunks:    maxChunks,
 		ResumeChunks: resumeChunks,
+		OnPlan:       onPlan,
 	}
 
 	out := make(chan Chunk)
