@@ -41,7 +41,8 @@ func Load(path string) (*State, error) {
 	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(&data); err != nil {
-		return nil, fmt.Errorf("invalid state file: %w", err)
+		return nil,
+			fmt.Errorf("invalid state file: %w", err)
 	}
 
 	return &State{
@@ -51,10 +52,15 @@ func Load(path string) (*State, error) {
 }
 
 func (s *State) AddChunk(chunk ChunkState) {
-	for _, existing := range s.data.Chunks {
-		if existing.Index == chunk.Index {
-			return
+	for i := range s.data.Chunks {
+		if s.data.Chunks[i].Index != chunk.Index {
+			continue
 		}
+
+		s.data.Chunks[i].Offset = chunk.Offset
+		s.data.Chunks[i].Size = chunk.Size
+
+		return
 	}
 
 	s.data.Chunks = append(s.data.Chunks, chunk)
@@ -67,7 +73,8 @@ func (s *State) UpdateChunk(index int, downloaded int64) error {
 		}
 
 		if downloaded < 0 || downloaded > s.data.Chunks[i].Size {
-			return fmt.Errorf("invalid downloaded value: %d", downloaded)
+			return fmt.Errorf("invalid downloaded value: %d\nSEcond:\n%v",
+				downloaded, s.data.Chunks[i].Size)
 		}
 
 		s.data.Chunks[i].Downloaded = downloaded
