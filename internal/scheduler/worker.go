@@ -19,6 +19,7 @@ type Task struct {
 type Chunk struct {
 	Index      int
 	RangeStart int64
+	RangeSize  int64
 	Offset     int64
 	Bytes      []byte
 }
@@ -60,6 +61,7 @@ func fetchFromOffset(
 			chunks <- Chunk{
 				Index:      t.Index,
 				RangeStart: t.Range.Start,
+				RangeSize:  t.Range.End - t.Range.Start + 1,
 				Offset:     *offset,
 				Bytes:      data,
 			}
