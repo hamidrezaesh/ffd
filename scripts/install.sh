@@ -90,7 +90,7 @@ else
     )"
 
     # Never install a beta in stable mode.
-    if printf '%s\n' "$LATEST_TAG" | grep -q '^v.*-beta\.'; then
+    if printf '%s\n' "$LATEST_TAG" | grep -q 'beta'; then
         echo "Error: refusing to install beta release: $LATEST_TAG"
         exit 1
     fi
