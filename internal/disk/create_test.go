@@ -1,27 +1,63 @@
 package disk
 
 import (
-	"testing"
 	"os"
+	"testing"
 )
 
-func TestAllocate(t *testing.T){
-	f := FileInfo {
-		Filename: "example.test",
-		Path: "example.test",
-		TotalSize: int64(1200000),
+func TestCreateAndAllocate(t *testing.T) {
+	tempDir := t.TempDir()
+
+	path := tempDir + "/example.test"
+
+	f := FileInfo{
+		Filename:  "example.test",
+		Path:      path,
+		TotalSize: 1_200_000,
 	}
 
-	file, err := Allocate(f)
-	if err != nil{
-		t.Fatalf("Error: %v", err)
+	// Create
+	file, err := Create(f)
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
 	}
 
-	i, _ := os.Stat("example.test")
-	size := i.Size()
+	if file == nil {
+		t.Fatal("Create() returned nil file")
+	}
 
-	t.Logf("\nFilename: %v\nPath: %v\nExpectedSize: %v\nFile: %v\nFinalSize: %v", f.Filename, f.Path, f.TotalSize, file, size)
+	// Check initial size
+	info, err := os.Stat(f.Path)
+	if err != nil {
+		t.Fatalf("failed to stat created file: %v", err)
+	}
 
-	_ = os.Remove("example.test")
-	t.Log("example file removed\n")
+	// Allocate
+	if err := Allocate(file, 0, 100); err != nil {
+		t.Fatalf("Allocate() error = %v", err)
+	}
+
+	// Check final size
+	info, err = os.Stat(f.Path)
+	if err != nil {
+		t.Fatalf("failed to stat allocated file: %v", err)
+	}
+
+	if info.Size() != f.TotalSize {
+		t.Errorf(
+			"allocated file size = %d, want %d",
+			info.Size(),
+			f.TotalSize,
+		)
+	}
+
+	t.Logf(
+		"Created and allocated %q: initial size = 0, final size = %d",
+		f.Path,
+		info.Size(),
+	)
+
+	if err := file.Close(); err != nil {
+		t.Errorf("failed to close file: %v", err)
+	}
 }
