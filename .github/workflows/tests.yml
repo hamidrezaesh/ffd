@@ -34,7 +34,7 @@ jobs:
         run: go test ./...
 
       - name: Build
-        run: go build -o ffd${{ runner.os == 'Windows' && '.exe' || '' }} ./cmd/ffd
+        run: go build -o ffd${{ runner.os == 'Windows' && '.exe' || '' }}
 
       - name: Download test file
         run: ./ffd${{ runner.os == 'Windows' && '.exe' || '' }} https://testfile.to/dl/100mb
