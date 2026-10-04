@@ -7,7 +7,7 @@ import (
 func TestCheckHTTP1(t *testing.T) {
 	url := "https://releases.ubuntu.com/26.04.1/ubuntu-26.04.1-desktop-amd64.iso"
 
-	client := newClient(1, nil, nil)
+	client := newClient(1, nil, nil, nil)
 
 	supported := checkAvailableProtocol(url, client)
 
@@ -17,7 +17,7 @@ func TestCheckHTTP1(t *testing.T) {
 func TestCheckHTTP2(t *testing.T) {
 	url := "https://releases.ubuntu.com/26.04.1/ubuntu-26.04.1-desktop-amd64.iso"
 
-	client := newClient(2, nil, nil)
+	client := newClient(2, nil, nil, nil)
 
 	supported := checkAvailableProtocol(url, client)
 
@@ -27,7 +27,7 @@ func TestCheckHTTP2(t *testing.T) {
 func TestCheckHTTP3(t *testing.T) {
 	url := "https://releases.ubuntu.com/26.04.1/ubuntu-26.04.1-desktop-amd64.iso"
 
-	client := newClient(3, nil, nil)
+	client := newClient(3, nil, nil, nil)
 
 	supported := checkAvailableProtocol(url, client)
 
