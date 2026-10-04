@@ -37,7 +37,7 @@ jobs:
         run: go build -o ffd${{ runner.os == 'Windows' && '.exe' || '' }}
 
       - name: Download test file
-        run: ./ffd${{ runner.os == 'Windows' && '.exe' || '' }} https://testfile.to/dl/100mb
+        run: ./ffd${{ runner.os == 'Windows' && '.exe' || '' }} https://testfile.to/dl/100mb -o 100mb
 
       - name: Verify SHA-256
         shell: bash
