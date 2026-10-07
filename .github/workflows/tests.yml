@@ -39,6 +39,12 @@ jobs:
       - name: Download test file
         run: ./ffd${{ runner.os == 'Windows' && '.exe' || '' }} https://testfile.to/dl/100mb -o 100mb
 
+      - name: Check downloaded files
+        shell: bash
+        run: |
+          echo "Files in working directory:"
+          ls -lah
+
       - name: Verify SHA-256
         shell: bash
         env:
@@ -56,8 +62,8 @@ jobs:
           echo "Actual:   $ACTUAL_SHA256"
 
           if [[ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]]; then
-            echo "❌ SHA-256 mismatch"
+            echo "[ERROR] SHA-256 mismatch"
             exit 1
           fi
 
-          echo "✅ SHA-256 verified"
+          echo "[PASSED] SHA-256 verified"
