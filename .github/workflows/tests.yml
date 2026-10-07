@@ -51,11 +51,11 @@ jobs:
           EXPECTED_SHA256: "20492a4d0d84f8beb1767f6616229f85d44c2827b64bdbfb260ee12fa1109e0e"
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            ACTUAL_SHA256=$(certutil -hashfile 100mb SHA256 | sed -n '2p' | tr -d ' ')
+            ACTUAL_SHA256=$(certutil -hashfile 100mb.bin SHA256 | sed -n '2p' | tr -d ' ')
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            ACTUAL_SHA256=$(shasum -a 256 100mb | awk '{print $1}')
+            ACTUAL_SHA256=$(shasum -a 256 100mb.bin | awk '{print $1}')
           else
-            ACTUAL_SHA256=$(sha256sum 100mb | awk '{print $1}')
+            ACTUAL_SHA256=$(sha256sum 100mb.bin | awk '{print $1}')
           fi
 
           echo "Expected: $EXPECTED_SHA256"
