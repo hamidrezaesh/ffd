@@ -97,3 +97,7 @@ func (s *State) Data() DownloadState {
 func (s *State) SetPlan(chunks []ChunkState) {
 	s.data.Chunks = chunks
 }
+
+func (s *State) RemoveState() error {
+	return os.Remove(s.path)
+}

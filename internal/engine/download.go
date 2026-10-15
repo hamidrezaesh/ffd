@@ -262,6 +262,12 @@ func Download(
 			return
 		}
 
+		// remove state file
+		if err := downloadState.RemoveState(); err != nil && !os.IsNotExist(err) {
+			result.Done <- err
+			return
+		}
+
 		result.Done <- nil
 	}()
 

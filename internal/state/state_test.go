@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -100,4 +101,29 @@ func TestState(t *testing.T) {
 
 	printJSON(t, loaded.Data())
 	t.Log("\n\n")
+
+	// 7. Remove state file
+	// first check if it exists
+	_, err = os.Stat(statePath)
+	if err == nil {
+		t.Log("[]file exists")
+	} else if os.IsNotExist(err) {
+		t.Log("[]file doesn't exist")
+	}
+
+	t.Log("Removing file...")
+
+	err = state.RemoveState()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check again
+	_, err = os.Stat(statePath)
+	if err == nil {
+		t.Log("[]file exists")
+	} else if os.IsNotExist(err) {
+		t.Log("[]file doesn't exist")
+	}
+
 }
