@@ -2,100 +2,54 @@
 
 /*
 Windows does not support the same range-based allocation strategy
-used on POSIX systems. We therefore download each range into a
-temporary file, then merge the ranges into the final file in order.
+used on POSIX systems. We attempt whole-file allocation on the first
+write, then write chunks directly to their final offsets.
 */
 
 package engine
 
 import (
-	"fmt"
+	"io"
 	"os"
-	"path/filepath"
-	"sort"
 
 	"github.com/hamidrezaesh/ffd/internal/disk"
 	"github.com/hamidrezaesh/ffd/internal/scheduler"
 )
 
 type download struct {
-	fileInfo disk.FileInfo
-	files    map[int64]*os.File
-	paths    map[int64]string
+	file     *os.File
+	fileSize int64
+
+	allocateAvailable  bool
+	wholeFileAllocated bool
 }
 
 func newDownload(fileInfo disk.FileInfo) (*download, error) {
+	file, err := disk.Create(fileInfo)
+	if err != nil {
+		return nil, err
+	}
+
 	return &download{
-		fileInfo: fileInfo,
-		files:    make(map[int64]*os.File),
-		paths:    make(map[int64]string),
+		file:              file,
+		fileSize:          fileInfo.TotalSize,
+		allocateAvailable: true,
 	}, nil
 }
 
 func (d *download) Write(chunk scheduler.Chunk) error {
-	partDir := d.fileInfo.Path
-
-	if _, err := os.Stat(partDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(partDir, 0755); err != nil {
-			return err
-		}
+	n, err := d.file.WriteAt(chunk.Bytes, chunk.Offset)
+	if err != nil {
+		return err
 	}
 
-	partFile, exists := d.files[chunk.RangeStart]
-
-	if !exists {
-		partPath := filepath.Join(
-			partDir,
-			fmt.Sprintf(
-				"part-%d.bin",
-				chunk.RangeStart,
-			),
-		)
-
-		partFile, err := disk.AllocateChunk(
-			partPath,
-			int64(len(chunk.Bytes)),
-		)
-		if err != nil {
-			return err
-		}
-
-		d.files[chunk.RangeStart] = partFile
-		d.paths[chunk.RangeStart] = partPath
+	if n != len(chunk.Bytes) {
+		return io.ErrShortWrite
 	}
 
-	_, err := partFile.Write(chunk.Bytes)
-	return err
+	return nil
 }
 
 func (d *download) Close() error {
-	for _, file := range d.files {
-		if err := file.Close(); err != nil {
-			return err
-		}
-	}
-
-	rangeStarts := make([]int64, 0, len(d.paths))
-
-	for rangeStart := range d.paths {
-		rangeStarts = append(rangeStarts, rangeStart)
-	}
-
-	sort.Slice(
-		rangeStarts,
-		func(i, j int) bool {
-			return rangeStarts[i] < rangeStarts[j]
-		},
-	)
-
-	for _, rangeStart := range rangeStarts {
-		if err := disk.Append(
-			d.fileInfo.Path,
-			d.paths[rangeStart],
-		); err != nil {
-			return err
-		}
-	}
-
-	return os.Remove(d.fileInfo.Path)
+	return d.file.Close()
 }
