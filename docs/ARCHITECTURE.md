@@ -86,6 +86,11 @@ Windows → %AppData%\ffd\config.toml
 
 ---
 
+## `internal/state/`
+Responsible for downloads' state, such as filename and chunks' info.
+
+---
+
 ## `internal/engine/`
 
 Responsible for the actual download process.
@@ -247,6 +252,9 @@ The workflow:
 6. Publishes the release on GitHub
 
 The workflow allows releases to be created automatically without manually building binaries for every platform.
+
+### `os-test.yml` and `tests.yml`
+Runs test.
 
 # Requirements
 
