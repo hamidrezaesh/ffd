@@ -8,20 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hamidrezaesh/ffd/internal/tools"
 	"github.com/hamidrezaesh/ffd/internal/tracker"
 )
-
-func clamp(value, minValue, maxValue int64) int64 {
-	if value < minValue {
-		return minValue
-	}
-
-	if value > maxValue {
-		return maxValue
-	}
-
-	return value
-}
 
 func nWorkers(
 	url string,
@@ -175,7 +164,7 @@ func (s *Scheduler) testWorkers(
 		64,
 	}
 
-	testSize := clamp(
+	testSize := tools.Clamp(
 		s.TotalSize/50,
 		2*1024*1024,
 		200*1024*1024,

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/hamidrezaesh/ffd/internal/tools"
 )
 
 /*
@@ -59,7 +61,7 @@ func (s *Scheduler) testProtocol(
 		3,
 	}
 
-	testSize := clamp(
+	testSize := tools.Clamp(
 		s.TotalSize/50,
 		minTestSize,
 		maxTestSize,
