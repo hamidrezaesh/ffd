@@ -10,8 +10,8 @@ import (
 	"github.com/hamidrezaesh/ffd/internal/metadata"
 	"github.com/hamidrezaesh/ffd/internal/scheduler"
 	"github.com/hamidrezaesh/ffd/internal/state"
+	"github.com/hamidrezaesh/ffd/internal/tools"
 	"github.com/hamidrezaesh/ffd/internal/tracker"
-	"github.com/hamidrezaesh/ffd/internal/validator"
 )
 
 type Request struct {
@@ -73,11 +73,16 @@ func Download(
 	}
 
 	// Validate filename.
-	if err := validator.Filename(filename); err != nil {
+	if err := tools.Filename(filename); err != nil {
 		return nil, err
 	}
 
-	// define path
+	// Choose a unique filename if needed.
+	if !overwrite {
+		filename = tools.UniqueFilename(req.Path, filename, md.Ext)
+	}
+
+	// Define path.
 	filePath := filepath.Join(req.Path, filename+md.Ext)
 
 	fileInfo := disk.FileInfo{
