@@ -17,7 +17,7 @@ ffd <URL1> <URL2> <URL3>
 ### Options
 
 | Option                 | Short | Description                              | Default |
-| ---------------------- | ----- | ---------------------------------------- | ------- |
+|------------------------| ----- | ---------------------------------------- | ------- |
 | `--output NAME`        | `-o`  | Custom output filename                   | —       |
 | `--wait SECONDS`       | `-w`  | Wait before downloading                  | —       |
 | `--path PATH`          | `-p`  | Output directory                         | `.`     |
@@ -29,6 +29,7 @@ ffd <URL1> <URL2> <URL3>
 | `--cookie COOKIE`      | —     | Add an HTTP cookie                       | —       |
 | `--cookie-file FILE`   | —     | Load cookies from a Netscape-format file | —       |
 | `--set-proxy PROXY`    | —     | Set a proxy for downloading              | —       |
+| `--overwrite`          | —     | Overwrite an existing file and restart the download| —       |
 | `--help`               | `-h`  | Show help                                | —       |
 | `--version`            | `-v`  | Show version                             | —       |
 
@@ -125,6 +126,14 @@ ffd <URL> --cookie-file cookies.txt
 ```
 
 Cookie domain, path, expiration, and security rules determine when cookies are sent.
+
+#### `--overwrite`
+
+Overwrite an existing file and restart the download:
+
+```bash
+ffd <URL> --overwrite
+```
 
 ---
 
