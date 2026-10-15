@@ -4,11 +4,15 @@ import (
 	"testing"
 )
 
-func TestGetLatestVersion(t *testing.T){
-	latestVersion, err := getLatestVersion()
-	if err != nil {
-		t.Fatalf("\nError: %v\n", err)
+func TestGetLatestVersion(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping GitHub API test in short mode")
 	}
 
-	t.Logf("\nLatest Version On Github: %v\n", latestVersion)
+	latestVersion, err := getLatestVersion()
+	if err != nil {
+		t.Fatalf("getLatestVersion() error: %v", err)
+	}
+
+	t.Logf("Latest version on GitHub: %v", latestVersion)
 }
