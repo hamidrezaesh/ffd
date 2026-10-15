@@ -6,6 +6,62 @@ All notable changes to FFD are documented in this file.
 
 *Nothing Yet*
 
+## v0.4.0
+
+### Changed
+
+* Promoted the tested `v0.4.0-beta.2` release to stable.
+
+## v0.4.0-beta.2
+
+### Added
+
+* Added Windows disk allocation support.
+* Added unique filename validation to prevent filename conflicts.
+
+### Changed
+
+* Updated the download engine's write implementation.
+* Refactored validation utilities into the `tools` package.
+* Moved the `clamp` function from the scheduler to the `tools` package.
+* Updated POSIX installers to skip beta releases by default and support beta installation using `--beta`.
+* Removed completed download state files after successful downloads.
+
+### Fixed
+
+* Fixed Windows compatibility for file creation and disk allocation.
+* Fixed Windows test compatibility using build tags.
+* Fixed beta version detection in the installer.
+* Fixed CI build directory configuration.
+* Fixed the FFD download test by specifying an output filename.
+
+### Removed
+
+* Removed the old `validator` package.
+
+## v0.4.0-beta.1
+
+### Added
+
+* Added download resume support by restoring previously downloaded chunks.
+* Added persistent storage of the complete chunk plan to support resuming downloads.
+* Added overwrite support for existing files.
+* Added download state persistence.
+
+### Changed
+
+* Updated the CLI help information.
+* Improved download scheduling to support resumed chunks.
+* Optimized disk allocation for improved performance.
+* Improved download state management and error handling.
+
+### Fixed
+
+* Fixed Darwin disk allocation.
+* Fixed automatic worker selection.
+* Fixed file existence checks during disk operations.
+* Added response size validation when fetching data from a specific offset to prevent invalid chunk processing.
+
 ## v0.3.21
 
 ### Fixed
