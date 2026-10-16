@@ -16,8 +16,8 @@
 
 ## Features
 
+* Faster downloads with multi-segment downloading.
 * Built-in proxy — Use FFD as a local HTTP forward proxy.
-* Support for custom HTTP headers and cookies, including Netscape-format cookie files.
 
 ## Installation
 
@@ -42,32 +42,11 @@ For detailed instructions and alternative installation methods, see **[docs/INST
 ffd https://example.com/file.zip
 ```
 
-ffd automatically detects the file metadata and, when supported, downloads the file using multiple HTTP byte ranges.
-
 ### HTTP Forward Proxy
-
-ffd can also run as a local HTTP forward proxy.
-
-Start the proxy:
 
 ```bash
 ffd proxy
 ```
-
-By default, the proxy listens on `127.0.0.1:8000`
-
-You can change the port with:
-
-```bash
-ffd proxy --port 9000
-```
-
-Then configure your browser or another HTTP client to use:
-
-HTTP Proxy: 127.0.0.1:8000  
-HTTPS Proxy: 127.0.0.1:8000
-
-For detailed information about using ffd, including commands, options, and examples, see **[docs/USAGE.md](docs/USAGE.md)**.
 
 ## How it works
 
@@ -108,6 +87,14 @@ ffd/
 ```
 
 For detailed information about the project structure, packages, files, and how ffd works internally, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
+## Contributing
+Want to contribute to FFD? Check out the [Contributing Guide](CONTRIBUTING.md) to get started.
+
+## Roadmap
+Check out [Roadmap](https://ffd-cli.pages.dev/roadmap) to see planned features and
+future improvements.
+> Have an idea? Read [`Contributing.md`](CONTRIBUTING.md#proposing-roadmap-ideas) for more details.
 
 ## License
 
