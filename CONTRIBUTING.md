@@ -23,14 +23,3 @@ Before opening a Pull Request:
 * Make sure it fits the project's structure and style.
 
 Please do not submit unreviewed or untested AI-generated code.
-
-## Proposing Roadmap Ideas
-
-Have an idea for FFD? We'd love to hear it!
-
-1. Open [`ROADMAP.md`](ROADMAP.md) and check whether your idea is already listed.
-2. Add your idea under the `Planned` section, following the existing format.
-3. Open a pull request describing your idea and why it could be useful.
-4. Once your pull request is reviewed and merged, your idea will be added to the roadmap.
-
-Your suggestions help shape FFD's future. Thanks for contributing!

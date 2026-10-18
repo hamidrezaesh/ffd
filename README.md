@@ -91,11 +91,6 @@ For detailed information about the project structure, packages, files, and how f
 ## Contributing
 Want to contribute to FFD? Check out the [Contributing Guide](CONTRIBUTING.md) to get started.
 
-## Roadmap
-Check out [Roadmap](https://ffd-cli.pages.dev/roadmap) to see planned features and
-future improvements.
-> Have an idea? Read [`Contributing.md`](CONTRIBUTING.md#proposing-roadmap-ideas) for more details.
-
 ## License
 
 `ffd` is licensed under the Apache 2.0 License.
