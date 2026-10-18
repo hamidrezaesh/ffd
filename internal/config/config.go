@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/hamidrezaesh/ffd/version"
 )
@@ -91,6 +92,29 @@ func GetConfig() (Config, error) {
 	var config Config
 	if err := json.Unmarshal(data, &config); err != nil {
 		return Config{}, err
+	}
+
+	updated := false
+
+	// update user-agent: ffd/version if ffd is upgraded.
+	for i := range config.Headers {
+		header := &config.Headers[i]
+
+		if strings.EqualFold(header.Key, "User-Agent") &&
+			strings.HasPrefix(header.Value, "ffd/") {
+			expected := fmt.Sprintf("ffd/%s", version.Version)
+
+			if header.Value != expected {
+				header.Value = expected
+				updated = true
+			}
+		}
+	}
+
+	if updated {
+		if err := SetConfig(config); err != nil {
+			return Config{}, err
+		}
 	}
 
 	return config, nil
