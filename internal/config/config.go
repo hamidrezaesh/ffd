@@ -1,22 +1,22 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 
-	"github.com/BurntSushi/toml"
 	"github.com/hamidrezaesh/ffd/version"
 )
 
 type Header struct {
-	Key   string `toml:"key"`
-	Value string `toml:"value"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type Config struct {
-	Headers []Header `toml:"headers"`
+	Headers []Header `json:"headers"`
 }
 
 func configPath() string {
@@ -24,15 +24,15 @@ func configPath() string {
 	if err != nil {
 		switch runtime.GOOS {
 		case "windows":
-			configDir = filepath.Join(os.Getenv("APPDATA"))
-		case "darwin": // macOS
+			configDir = os.Getenv("APPDATA")
+		case "darwin":
 			configDir = filepath.Join(os.Getenv("HOME"), "Library", "Application Support")
-		default: // Linux and other Unix-like systems
+		default:
 			configDir = filepath.Join(os.Getenv("HOME"), ".config")
 		}
 	}
 
-	return filepath.Join(configDir, "ffd", "config.toml")
+	return filepath.Join(configDir, "ffd", "config.json")
 }
 
 func ensureConfig() (string, error) {
@@ -67,7 +67,10 @@ func ensureConfig() (string, error) {
 	}
 	defer file.Close()
 
-	if err := toml.NewEncoder(file).Encode(config); err != nil {
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+
+	if err := encoder.Encode(config); err != nil {
 		return "", err
 	}
 
@@ -80,9 +83,13 @@ func GetConfig() (Config, error) {
 		return Config{}, err
 	}
 
-	var config Config
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return Config{}, err
+	}
 
-	if _, err := toml.DecodeFile(path, &config); err != nil {
+	var config Config
+	if err := json.Unmarshal(data, &config); err != nil {
 		return Config{}, err
 	}
 
@@ -101,5 +108,8 @@ func SetConfig(config Config) error {
 	}
 	defer file.Close()
 
-	return toml.NewEncoder(file).Encode(config)
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+
+	return encoder.Encode(config)
 }
