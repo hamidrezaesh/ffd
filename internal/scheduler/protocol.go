@@ -96,13 +96,14 @@ func (s *Scheduler) testProtocol(
 			return 0, startByte, err
 		}
 
-		testRange := ranges[0]
+		testRange := ranges[1]
 
 		client := newClient(
 			protocol,
 			proxyServer,
 			nil,
 			jar,
+			s.TotalSize,
 		)
 
 		supported := checkAvailableProtocol(
