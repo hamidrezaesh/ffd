@@ -292,6 +292,7 @@ func Download(
 				proxyServer,
 				headers,
 				jar,
+				scheduler.TotalSize,
 			)
 
 			// If no protocol was explicitly selected, use the
@@ -302,6 +303,7 @@ func Download(
 					proxyServer,
 					headers,
 					jar,
+					scheduler.TotalSize,
 				)
 			}
 
@@ -367,6 +369,7 @@ func Download(
 			proxyServer,
 			headers,
 			jar,
+			scheduler.TotalSize,
 		)
 
 		// Automatically determine worker count.
