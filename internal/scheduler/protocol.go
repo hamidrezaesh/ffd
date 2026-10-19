@@ -84,10 +84,7 @@ func (s *Scheduler) testProtocol(
 			break
 		}
 
-		testEnd := startByte + testSize
-		if testEnd > s.TotalSize {
-			testEnd = s.TotalSize
-		}
+		testEnd := min(startByte+testSize, s.TotalSize)
 
 		ranges, err := Split(
 			startByte,
