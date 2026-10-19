@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/hamidrezaesh/ffd/internal/tools"
 	"github.com/quic-go/quic-go/http3"
 )
 
@@ -47,17 +48,26 @@ func newClient(
 	proxyServer *url.URL,
 	headers Headers,
 	jar http.CookieJar,
+	totalSize int64,
 ) *HeaderClient {
 	var client *http.Client
+	var timeout int64
+
+	if totalSize <= 0 {
+		timeout = 1000
+	} else {
+		timeout = tools.Clamp(totalSize/(100*1024), 100, 1000) // timeout based on the total size of file.
+	}
 
 	switch protocol {
 	case 1: // HTTP/1.1
 		transport := &http.Transport{
-			MaxIdleConns:        128,
-			MaxIdleConnsPerHost: 64,
-			MaxConnsPerHost:     64,
-			IdleConnTimeout:     90 * time.Second,
-			TLSNextProto:        map[string]func(string, *tls.Conn) http.RoundTripper{},
+			MaxIdleConns:          128,
+			MaxIdleConnsPerHost:   64,
+			MaxConnsPerHost:       64,
+			IdleConnTimeout:       90 * time.Second,
+			TLSNextProto:          map[string]func(string, *tls.Conn) http.RoundTripper{},
+			ResponseHeaderTimeout: time.Duration(timeout) * time.Millisecond,
 		}
 
 		if proxyServer != nil {
@@ -71,11 +81,12 @@ func newClient(
 
 	case 2: // HTTP/2
 		transport := &http.Transport{
-			MaxIdleConns:        128,
-			MaxIdleConnsPerHost: 64,
-			MaxConnsPerHost:     64,
-			IdleConnTimeout:     90 * time.Second,
-			ForceAttemptHTTP2:   true,
+			MaxIdleConns:          128,
+			MaxIdleConnsPerHost:   64,
+			MaxConnsPerHost:       64,
+			IdleConnTimeout:       90 * time.Second,
+			ForceAttemptHTTP2:     true,
+			ResponseHeaderTimeout: time.Duration(timeout) * time.Millisecond,
 		}
 
 		if proxyServer != nil {
