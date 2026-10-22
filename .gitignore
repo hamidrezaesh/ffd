@@ -3,5 +3,5 @@ build/
 *.test
 dist/
 temp/
-test/benchmark/benchmark
+test/benchmark/benchmark*
 test/benchmark/RESULT.md
