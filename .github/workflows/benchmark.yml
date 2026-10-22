@@ -1,0 +1,68 @@
+name: Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: "Number of benchmark runs"
+        required: true
+        type: number
+        default: 3
+      sizes:
+        description: "Comma-separated file sizes (e.g. 1mb,10mb,100mb)"
+        required: true
+        type: string
+        default: "1mb,10mb,100mb"
+
+  push:
+    paths:
+      - "test/benchmark/**"
+      - ".github/workflows/benchmark.yml"
+
+jobs:
+  benchmark:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install wget and aria2
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget aria2
+
+      - name: Build FFD
+        run: go build -o ffd .
+
+      - name: Build benchmark
+        working-directory: test/benchmark
+        run: |
+          cp ../../ffd ./ffd
+          go build -o benchmark -tags benchmark .
+
+      - name: Run benchmark
+        working-directory: test/benchmark
+        env:
+          RUNS: ${{ inputs.runs || 3 }}
+          SIZES: ${{ inputs.sizes || '1mb,10mb,100mb' }}
+        run: ./benchmark --runs "$RUNS" --sizes "$SIZES"
+
+      - name: Print results
+        if: always()
+        working-directory: test/benchmark
+        run: |
+          if [ -f result.md ]; then
+            cat result.md
+          elif [ -f RESULT.md ]; then
+            cat RESULT.md
+          else
+            echo "No benchmark results file was generated."
+          fi
