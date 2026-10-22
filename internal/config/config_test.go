@@ -21,7 +21,7 @@ func useTempConfigDir(t *testing.T) {
 	_ = original
 }
 
-func TestGetConfig(t *testing.T) {
+func getConfigTest(t *testing.T) {
 	config, err := GetConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -34,7 +34,7 @@ func TestGetConfig(t *testing.T) {
 	t.Logf("Config: %+v", config)
 }
 
-func TestSetConfig(t *testing.T) {
+func setConfigTest(t *testing.T) {
 	want := Config{
 		Headers: []Header{
 			{Key: "X-Test", Value: "hello"},
@@ -56,7 +56,7 @@ func TestSetConfig(t *testing.T) {
 	}
 }
 
-func TestConfigJSONFormat(t *testing.T) {
+func configJSONFormatTest(t *testing.T) {
 	config := Config{
 		Headers: []Header{
 			{Key: "X-Test", Value: "hello"},
@@ -82,7 +82,7 @@ func TestConfigJSONFormat(t *testing.T) {
 	}
 }
 
-func TestConfigPathExtension(t *testing.T) {
+func configPathExtensionTest(t *testing.T) {
 	path := configPath()
 
 	if filepath.Ext(path) != ".json" {
@@ -94,4 +94,12 @@ func TestConfigPathExtension(t *testing.T) {
 	}
 
 	_ = os.ErrNotExist
+}
+
+func TestConfig(t *testing.T) {
+	getConfigTest(t)
+	setConfigTest(t)
+	configJSONFormatTest(t)
+	configPathExtensionTest(t)
+	getConfigTest(t)
 }
