@@ -54,9 +54,9 @@ func newClient(
 	var timeout int64
 
 	if totalSize <= 0 {
-		timeout = 1000
+		timeout = 4000
 	} else {
-		timeout = tools.Clamp(totalSize/(100*1024), 100, 1000) // timeout based on the total size of file.
+		timeout = tools.Clamp(totalSize/(10*1024), 1000, 10000) // timeout based on the total size of file.
 	}
 
 	switch protocol {
