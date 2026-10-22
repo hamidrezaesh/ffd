@@ -11,13 +11,17 @@ import (
 	"github.com/hamidrezaesh/ffd/version"
 )
 
+const defaultMinFilesizeToTest int64 = 10 * 1024 * 1024
+
 type Header struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
 type Config struct {
-	Headers []Header `json:"headers"`
+	Headers                  []Header `json:"headers"`
+	DefaultMinFileSizeToTest int64    `json:"default_min_file_size_to_test"`
+	MinFileSizeToTest        int64    `json:"min_file_size_to_test"`
 }
 
 func configPath() string {
@@ -60,6 +64,8 @@ func ensureConfig() (string, error) {
 				Value: "*/*",
 			},
 		},
+		DefaultMinFileSizeToTest: defaultMinFilesizeToTest,
+		MinFileSizeToTest:        0,
 	}
 
 	file, err := os.Create(path)
@@ -96,7 +102,7 @@ func GetConfig() (Config, error) {
 
 	updated := false
 
-	// update user-agent: ffd/version if ffd is upgraded.
+	// Update user-agent: ffd/version if ffd is upgraded.
 	for i := range config.Headers {
 		header := &config.Headers[i]
 

@@ -13,12 +13,16 @@ import (
 	"github.com/hamidrezaesh/ffd/internal/engine"
 	"github.com/hamidrezaesh/ffd/internal/formatter"
 	"github.com/hamidrezaesh/ffd/internal/scheduler"
+	"github.com/hamidrezaesh/ffd/internal/tools"
 	"github.com/hamidrezaesh/ffd/version"
 	"github.com/spf13/cobra"
 )
 
-func downloadUrl(req engine.Request) error {
+func downloadUrl(req engine.Request, cfg config.Config) error {
 	var useProtocol int
+	var duration time.Duration
+	var minFileSizeToTest int64
+
 	switch protocol {
 	case "auto":
 		useProtocol = 0
@@ -32,42 +36,54 @@ func downloadUrl(req engine.Request) error {
 		return fmt.Errorf("unsupported protocol: %s", protocol)
 	}
 
-	// get proxy server
+	// Get proxy server.
 	var proxyServer *url.URL
 	var err error
+
 	if downloadProxyServerString != "" {
 		proxyServer, err = url.Parse(downloadProxyServerString)
 		if err != nil {
-			fmt.Printf(
-				"\r\033[KDownload failed: %v\n",
-				err,
-			)
+			fmt.Printf("\r\033[KDownload failed: %v\n", err)
 			return err
 		}
+	}
+
+	if cfg.MinFileSizeToTest == 0 {
+		minFileSizeToTest = cfg.DefaultMinFileSizeToTest
+	} else {
+		minFileSizeToTest = cfg.MinFileSizeToTest
 	}
 
 	startTime := time.Now()
 
 	// Start download.
-	result, err := engine.Download(req, maxRetries, maxWorkers, maxChunks, useProtocol, proxyServer, overwrite)
-
+	result, err := engine.Download(
+		req,
+		maxRetries,
+		maxWorkers,
+		maxChunks,
+		useProtocol,
+		proxyServer,
+		overwrite,
+		minFileSizeToTest,
+	)
 	if err != nil {
-		fmt.Printf(
-			"\r\033[KDownload failed: %v\n",
-			err,
-		)
-
+		fmt.Printf("\r\033[KDownload failed: %v\n", err)
 		return err
 	}
 
 	fmt.Println("Downloading...")
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
+
 	first := true
+
 	for {
 		select {
 		case <-ticker.C:
 			progress := result.Progress.Info()
+
 			if first {
 				fmt.Printf(
 					"%s\t%.2f%%\n%s left - %s / %s | %s/s",
@@ -91,22 +107,38 @@ func downloadUrl(req engine.Request) error {
 				formatter.Bytes(progress.Total),
 				formatter.Bytes(progress.Speed),
 			)
+
 		case err := <-result.Done:
 			if err != nil {
-				fmt.Printf(
-					"\n\033[KDownload failed: %v\n",
-					err,
-				)
+				fmt.Printf("\n\033[KDownload failed: %v\n", err)
 				return err
 			}
 
-			duration := time.Since(startTime).Round(time.Second)
+			elapsed := time.Since(startTime)
+
+			// Learn the minimum test size after the first successful download.
+			if cfg.MinFileSizeToTest == 0 && elapsed > 0 {
+				speed := float64(result.Metadata.TotalSize) / elapsed.Seconds()
+
+				cfg.MinFileSizeToTest = tools.Clamp(
+					int64(speed*10),
+					10*1024*1024,
+					500*1024*1024,
+				)
+
+				if err = config.SetConfig(cfg); err != nil {
+					return err
+				}
+			}
+
+			duration = elapsed.Round(time.Second)
 
 			fmt.Printf(
 				"\033[1A\r\033[K%s - 100%%\n\033[KDownload completed in %s\n",
 				result.Filename,
 				duration,
 			)
+
 			return nil
 		}
 	}
@@ -229,7 +261,7 @@ var rootCmd = &cobra.Command{
 				Jar:      jar,
 			}
 
-			err := downloadUrl(req)
+			err := downloadUrl(req, cfg)
 			if err != nil {
 				fmt.Printf("Error downloading: %v\n", err)
 				return

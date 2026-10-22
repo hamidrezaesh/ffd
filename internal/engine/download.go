@@ -37,6 +37,7 @@ func Download(
 	preferredProtocol int,
 	proxyServer *url.URL,
 	overwrite bool,
+	minFileSizeToTest int64,
 ) (*Result, error) {
 	if maxRetries == 0 {
 		maxRetries = 4
@@ -89,6 +90,13 @@ func Download(
 		Filename:  filename + md.Ext,
 		Path:      filePath,
 		TotalSize: md.TotalSize,
+	}
+
+	// check file size to test or not
+	if md.TotalSize <= minFileSizeToTest {
+		preferredProtocol = 1
+		maxWorkers = 8
+		maxChunks = 12
 	}
 
 	// Check and initialize state.
