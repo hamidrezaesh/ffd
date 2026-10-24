@@ -18,11 +18,6 @@ on:
         type: string
         default: "1mb,10mb,100mb"
 
-  push:
-    paths:
-      - "test/benchmark/**"
-      - ".github/workflows/benchmark.yml"
-
 jobs:
   benchmark:
     name: Run benchmarks
