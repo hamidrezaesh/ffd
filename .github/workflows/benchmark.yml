@@ -26,8 +26,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -40,8 +38,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y wget aria2
 
-      - name: Build FFD
-        run: go build -o ffd .
+      - name: Build FFD from selected ref
+        env:
+          REF: ${{ inputs.ref || github.sha }}
+        run: |
+          mkdir -p /tmp/ffd-old
+          git archive "$REF" | tar -x -C /tmp/ffd-old
+          cd /tmp/ffd-old
+          go build -o "$GITHUB_WORKSPACE/ffd" .
 
       - name: Build benchmark
         working-directory: test/benchmark
