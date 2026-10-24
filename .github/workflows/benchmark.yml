@@ -3,6 +3,10 @@ name: Benchmark
 on:
   workflow_dispatch:
     inputs:
+      ref:
+        description: "Tag, branch, or commit to test"
+        required: true
+        default: "main"
       runs:
         description: "Number of benchmark runs"
         required: true
@@ -27,6 +31,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
