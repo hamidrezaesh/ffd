@@ -7,6 +7,7 @@ on:
         description: "Tag, branch, or commit to test"
         required: true
         default: "main"
+        type: string
       runs:
         description: "Number of benchmark runs"
         required: true
@@ -26,6 +27,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -42,8 +45,14 @@ jobs:
         env:
           REF: ${{ inputs.ref || github.sha }}
         run: |
+          set -euo pipefail
+
+          git fetch origin "$REF"
+          COMMIT="$(git rev-parse FETCH_HEAD)"
+
           mkdir -p /tmp/ffd-old
-          git archive "$REF" | tar -x -C /tmp/ffd-old
+          git archive "$COMMIT" | tar -x -C /tmp/ffd-old
+
           cd /tmp/ffd-old
           go build -o "$GITHUB_WORKSPACE/ffd" .
 
