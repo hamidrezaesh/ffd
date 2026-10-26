@@ -5,3 +5,4 @@ dist/
 temp/
 test/benchmark/benchmark*
 test/benchmark/RESULT.md
+test/server/testdata
