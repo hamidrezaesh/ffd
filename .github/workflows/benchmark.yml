@@ -1,31 +1,43 @@
+
 name: Benchmark
 
 on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Tag, branch, or commit to test"
+        description: "Tag, branch, or commit to benchmark"
         required: true
         default: "main"
         type: string
+
+      source:
+        description: "Where to download test files from"
+        required: true
+        default: remote
+        type: choice
+        options:
+          - remote(testfile.to)
+          - local
+
       runs:
-        description: "Number of benchmark runs"
+        description: "Number of benchmark runs per downloader"
         required: true
         type: number
         default: 3
+
       sizes:
-        description: "Comma-separated file sizes (e.g. 1mb,10mb,100mb)"
+        description: "Comma-separated sizes (local supports 10mb,100mb,1gb)"
         required: true
         type: string
-        default: "1mb,10mb,100mb"
+        default: "10mb,100mb,1gb"
 
 jobs:
   benchmark:
-    name: Run benchmarks
+    name: Run benchmarks (${{ inputs.source }})
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout workflow repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -36,47 +48,155 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Install wget and aria2
+      - name: Install download tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget aria2
+          sudo apt-get install -y wget aria2 curl
 
-      - name: Build FFD from selected ref
+      - name: Fetch selected revision
         env:
-          REF: ${{ inputs.ref || github.sha }}
+          REF: ${{ inputs.ref }}
         run: |
           set -euo pipefail
 
-          git fetch origin "$REF"
+          git fetch --force origin "$REF"
           COMMIT="$(git rev-parse FETCH_HEAD)"
 
-          mkdir -p /tmp/ffd-old
-          git archive "$COMMIT" | tar -x -C /tmp/ffd-old
+          echo "Benchmarking revision: $COMMIT"
+          echo "COMMIT=$COMMIT" >> "$GITHUB_ENV"
 
-          cd /tmp/ffd-old
-          go build -o "$GITHUB_WORKSPACE/ffd" .
+          mkdir -p "$GITHUB_WORKSPACE/benchmark-src"
+          git archive "$COMMIT" |
+            tar -x -C "$GITHUB_WORKSPACE/benchmark-src"
+
+      - name: Generate local test files
+        if: inputs.source == 'local'
+        working-directory: benchmark-src
+        run: |
+          set -euo pipefail
+
+          cd test/benchmark
+          mkdir -p testdata
+
+          echo "Generating local benchmark files..."
+
+          dd if=/dev/urandom of=testdata/10mb.bin \
+            bs=1M count=10 iflag=fullblock status=progress
+
+          dd if=/dev/urandom of=testdata/100mb.bin \
+            bs=1M count=100 iflag=fullblock status=progress
+
+          dd if=/dev/urandom of=testdata/1gb.bin \
+            bs=1M count=1024 iflag=fullblock status=progress
+
+          echo "Generated files:"
+          ls -lh testdata/
+
+      - name: Validate local benchmark sizes
+        if: inputs.source == 'local'
+        env:
+          SIZES: ${{ inputs.sizes }}
+        run: |
+          set -euo pipefail
+
+          IFS=',' read -ra REQUESTED <<< "$SIZES"
+
+          for size in "${REQUESTED[@]}"; do
+            size="$(echo "$size" | tr '[:upper:]' '[:lower:]' | xargs)"
+
+            case "$size" in
+              10mb|100mb|1gb) ;;
+              *)
+                echo "::error::Local mode does not support size '$size'. Choose 10mb, 100mb, or 1gb."
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Build local HTTP server
+        if: inputs.source == 'local'
+        working-directory: benchmark-src
+        run: |
+          set -euo pipefail
+
+          go build -o test/server/server ./test/server
+
+      - name: Start local HTTP server
+        if: inputs.source == 'local'
+        working-directory: benchmark-src
+        run: |
+          set -euo pipefail
+
+          nohup ./test/server/server \
+            --addr 127.0.0.1:8080 \
+            --dir "$GITHUB_WORKSPACE/benchmark-src/test/benchmark/testdata" \
+            > /tmp/ffd-server.log 2>&1 &
+
+          echo $! > /tmp/ffd-server.pid
+
+          for i in $(seq 1 30); do
+            if curl -fsSI http://127.0.0.1:8080/10mb.bin >/dev/null; then
+              echo "Local server is ready."
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/ffd-server.log
+          echo "::error::Local server failed to start."
+          exit 1
+
+      - name: Show available disk space
+        run: |
+          df -h
+          df -h /tmp
 
       - name: Build benchmark
-        working-directory: test/benchmark
+        working-directory: benchmark-src/test/benchmark
         run: |
-          cp ../../ffd ./ffd
+          set -euo pipefail
           go build -o benchmark -tags benchmark .
 
       - name: Run benchmark
-        working-directory: test/benchmark
+        working-directory: benchmark-src/test/benchmark
         env:
-          RUNS: ${{ inputs.runs || 3 }}
-          SIZES: ${{ inputs.sizes || '1mb,10mb,100mb' }}
-        run: ./benchmark --runs "$RUNS" --sizes "$SIZES"
+          SOURCE: ${{ inputs.source }}
+          RUNS: ${{ inputs.runs }}
+          SIZES: ${{ inputs.sizes }}
+        run: |
+          set -euo pipefail
+
+          args=(--runs "$RUNS" --sizes "$SIZES")
+
+          if [[ "$SOURCE" == "local" ]]; then
+            args+=(--local)
+          fi
+
+          echo "Source: $SOURCE"
+          echo "Sizes: $SIZES"
+          echo "Runs: $RUNS"
+
+          ./benchmark "${args[@]}"
 
       - name: Print results
         if: always()
-        working-directory: test/benchmark
+        working-directory: benchmark-src/test/benchmark
         run: |
-          if [ -f result.md ]; then
-            cat result.md
-          elif [ -f RESULT.md ]; then
+          if [ -f RESULT.md ]; then
             cat RESULT.md
+          elif [ -f result.md ]; then
+            cat result.md
           else
             echo "No benchmark results file was generated."
           fi
+
+      - name: Stop local server
+        if: always() && inputs.source == 'local'
+        run: |
+          if [ -f /tmp/ffd-server.pid ]; then
+            kill "$(cat /tmp/ffd-server.pid)" 2>/dev/null || true
+          fi
+
+      - name: Show final disk space
+        if: always()
+        run: df -h
