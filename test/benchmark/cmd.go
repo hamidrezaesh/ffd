@@ -11,6 +11,7 @@ import (
 var (
 	sizes []string
 	runs  int
+	local bool
 )
 
 var rootCmd = &cobra.Command{
@@ -33,6 +34,13 @@ func init() {
 		"runs",
 		3,
 		"Number of benchmark runs per downloader",
+	)
+
+	rootCmd.Flags().BoolVar(
+		&local,
+		"local",
+		false,
+		"Use local benchmark files from 127.0.0.1:8080",
 	)
 }
 

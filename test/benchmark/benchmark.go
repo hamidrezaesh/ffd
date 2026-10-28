@@ -52,3 +52,18 @@ var fileSizes = map[string]FileSize{
 	"1gb":   {Name: "1 GB", URL: "https://testfile.to/dl/1gb"},
 	"10gb":  {Name: "10 GB", URL: "https://testfile.to/dl/10gb"},
 }
+
+var localFileSizes = map[string]FileSize{
+	"10mb": {
+		Name: "10 MB",
+		URL:  "http://127.0.0.1:8080/10mb.bin",
+	},
+	"100mb": {
+		Name: "100 MB",
+		URL:  "http://127.0.0.1:8080/100mb.bin",
+	},
+	"1gb": {
+		Name: "1 GB",
+		URL:  "http://127.0.0.1:8080/1gb.bin",
+	},
+}

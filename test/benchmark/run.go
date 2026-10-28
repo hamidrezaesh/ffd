@@ -27,7 +27,17 @@ func runBenchmark(cmd *cobra.Command, args []string) error {
 	var results []BenchmarkResult
 
 	for _, size := range sizes {
-		file, ok := fileSizes[size]
+		var (
+			file FileSize
+			ok   bool
+		)
+
+		if local {
+			file, ok = localFileSizes[size]
+		} else {
+			file, ok = fileSizes[size]
+		}
+
 		if !ok {
 			return fmt.Errorf("unsupported file size: %s", size)
 		}
