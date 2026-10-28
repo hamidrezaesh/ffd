@@ -1,6 +1,9 @@
 package engine
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -29,6 +32,11 @@ type Result struct {
 	Done     chan error
 }
 
+func hashURL(rawURL string) string {
+	sum := sha256.Sum256([]byte(rawURL))
+	return hex.EncodeToString(sum[:])
+}
+
 func Download(
 	req Request,
 	maxRetries int,
@@ -54,86 +62,127 @@ func Download(
 		Headers: req.Headers,
 	}
 
-	// Get a response.
-	resp, err := client.Head(req.URL)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	// Use the URL hash for the temporary download and its state.
+	urlHash := hashURL(req.URL)
+	tempPath := filepath.Join(req.Path, urlHash+".part")
+	statePath := state.GetStatePath(tempPath)
 
-	// Fetch metadata.
-	md, err := metadata.FetchMetadata(req.URL, resp)
-	if err != nil {
-		return nil, err
+	// Check whether this download can be resumed.
+	var downloadState *state.State
+	resumeExisting := false
+
+	if overwrite {
+		_ = os.Remove(statePath)
+		_ = os.Remove(tempPath)
+	} else {
+		loadedState, err := state.Load(statePath)
+		if err == nil {
+			_, fileErr := os.Stat(tempPath)
+			if fileErr == nil {
+				downloadState = loadedState
+				resumeExisting = true
+			} else if !os.IsNotExist(fileErr) {
+				return nil, fileErr
+			} else {
+				// The state exists, but its temporary file does not.
+				_ = os.Remove(statePath)
+			}
+		} else if !os.IsNotExist(err) {
+			return nil, err
+		}
 	}
 
-	// Use custom filename if provided.
+	var (
+		startByte     int64
+		resp          *http.Response
+		md            metadata.Metadata
+		err           error
+		initialChunks []scheduler.Chunk
+	)
+
+	if resumeExisting {
+		// Don't start another GET when resuming an existing partial file.
+		resp, err = client.Head(req.URL)
+		if err != nil {
+			return nil, err
+		}
+
+		md, err = metadata.FetchMetadata(req.URL, resp)
+		if err != nil {
+			_ = resp.Body.Close()
+			return nil, err
+		}
+
+		_ = resp.Body.Close()
+
+		saved := downloadState.Data()
+		if saved.URL != req.URL {
+			return nil, fmt.Errorf("saved download URL does not match")
+		}
+		if saved.TotalSize != md.TotalSize {
+			return nil, fmt.Errorf("remote file size changed; cannot safely resume")
+		}
+	} else {
+		// Download initial bytes while fetching metadata.
+		startByte, resp, md, err = scheduler.DownloadInitial(
+			client,
+			req.URL,
+			func(chunk scheduler.Chunk) error {
+				initialChunks = append(initialChunks, chunk)
+				return nil
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+	}
+
+	// Choose the final filename.
 	filename := md.Filename
 	if req.Filename != "" {
 		filename = req.Filename
 	}
 
-	// Validate filename.
+	if resumeExisting {
+		// Keep the original final filename across restarts.
+		filename = downloadState.Data().Filename
+	}
+
 	if err := tools.Filename(filename); err != nil {
 		return nil, err
 	}
 
-	// Choose a unique filename if needed.
-	if !overwrite {
+	// Only choose a new unique name for a fresh download.
+	if !overwrite && !resumeExisting {
 		filename = tools.UniqueFilename(req.Path, filename, md.Ext)
 	}
 
-	// Define path.
-	filePath := filepath.Join(req.Path, filename+md.Ext)
+	finalPath := filepath.Join(req.Path, filename+md.Ext)
 
+	// The downloader writes to the hash-based temporary file.
 	fileInfo := disk.FileInfo{
-		Filename:  filename + md.Ext,
-		Path:      filePath,
+		Filename:  urlHash + ".part",
+		Path:      tempPath,
 		TotalSize: md.TotalSize,
 	}
 
-	// check file size to test or not
 	if md.TotalSize <= minFileSizeToTest {
 		preferredProtocol = 1
 		maxWorkers = 8
 		maxChunks = 12
 	}
 
-	// Check and initialize state.
-	statePath := state.GetStatePath(filePath)
-
-	var downloadState *state.State
-
-	if overwrite {
-		// Start a completely fresh download.
-		_ = os.Remove(statePath)
-
+	// Initialize state for a fresh download.
+	if !resumeExisting {
 		downloadState, err = state.Init(statePath, state.DownloadState{
 			URL:       req.URL,
 			Filename:  filename,
-			TotalSize: fileInfo.TotalSize,
+			TotalSize: md.TotalSize,
 			Chunks:    []state.ChunkState{},
 		})
 		if err != nil {
 			return nil, err
-		}
-	} else {
-		// Resume existing download if a state file exists.
-		downloadState, err = state.Load(statePath)
-
-		if err != nil {
-			if os.IsNotExist(err) {
-				downloadState, err = state.Init(statePath, state.DownloadState{
-					URL:       req.URL,
-					Filename:  filename,
-					TotalSize: fileInfo.TotalSize,
-					Chunks:    []state.ChunkState{},
-				})
-			}
-
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
 
@@ -142,18 +191,47 @@ func Download(
 		return nil, err
 	}
 
-	// initial progress tracker
+	// Save the initial bytes and their resume position.
+	if !resumeExisting {
+		for _, chunk := range initialChunks {
+			if err := download.Write(chunk); err != nil {
+				_ = download.Close()
+				return nil, err
+			}
+		}
+
+		if startByte > 0 {
+			downloadState.SetPlan([]state.ChunkState{
+				{
+					Index:      0,
+					Offset:     0,
+					Size:       md.TotalSize,
+					Downloaded: startByte,
+				},
+			})
+
+			if err := downloadState.Save(); err != nil {
+				_ = download.Close()
+				return nil, err
+			}
+		}
+	}
+
+	// Initialize progress with bytes already downloaded.
 	progress := tracker.New(md.TotalSize)
 
-	// add downloaded bytes to tracker
 	for _, chunk := range downloadState.Data().Chunks {
 		if chunk.Downloaded > 0 {
 			progress.AddDownloaded(chunk.Downloaded)
 		}
 	}
 
-	// save downloaded chunks to resumeChunks
-	resumeChunks := make([]scheduler.ResumeChunk, 0, len(downloadState.Data().Chunks))
+	// Convert saved chunks into scheduler resume chunks.
+	resumeChunks := make(
+		[]scheduler.ResumeChunk,
+		0,
+		len(downloadState.Data().Chunks),
+	)
 
 	for _, chunk := range downloadState.Data().Chunks {
 		resumeChunks = append(resumeChunks, scheduler.ResumeChunk{
@@ -166,7 +244,6 @@ func Download(
 		})
 	}
 
-	// start tracker
 	progress.Start()
 
 	result := &Result{
@@ -205,7 +282,6 @@ func Download(
 				}
 
 				downloadState.SetPlan(chunks)
-
 				return downloadState.Save()
 			},
 		)
@@ -224,7 +300,6 @@ func Download(
 					return
 				}
 
-				// if chunks are test chunks, don't add them into state
 				if !chunk.Test {
 					downloadState.AddChunk(state.ChunkState{
 						Index:      chunk.Index,
@@ -233,7 +308,9 @@ func Download(
 						Downloaded: 0,
 					})
 
-					downloaded := chunk.Offset - chunk.RangeStart + int64(len(chunk.Bytes))
+					downloaded := chunk.Offset -
+						chunk.RangeStart +
+						int64(len(chunk.Bytes))
 
 					if err := downloadState.UpdateChunk(
 						chunk.RangeStart,
@@ -270,8 +347,25 @@ func Download(
 			return
 		}
 
-		// remove state file
-		if err := downloadState.RemoveState(); err != nil && !os.IsNotExist(err) {
+		// On overwrite, replace the old final file only after the download
+		// has completed successfully.
+		if overwrite {
+			if err := os.Remove(finalPath); err != nil &&
+				!os.IsNotExist(err) {
+				result.Done <- err
+				return
+			}
+		}
+
+		// Publish the completed file under its final filename.
+		if err := os.Rename(tempPath, finalPath); err != nil {
+			result.Done <- err
+			return
+		}
+
+		// Remove resume state after the rename succeeds.
+		if err := downloadState.RemoveState(); err != nil &&
+			!os.IsNotExist(err) {
 			result.Done <- err
 			return
 		}
