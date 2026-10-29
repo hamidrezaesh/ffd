@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -30,11 +28,6 @@ type Result struct {
 	Filename string
 	Progress *tracker.Progress
 	Done     chan error
-}
-
-func hashURL(rawURL string) string {
-	sum := sha256.Sum256([]byte(rawURL))
-	return hex.EncodeToString(sum[:])
 }
 
 func Download(
@@ -66,7 +59,7 @@ func Download(
 	}
 
 	// Use the URL hash for the temporary download and its state.
-	urlHash := hashURL(req.URL)
+	urlHash := tools.HashUrl(req.URL)
 	tempPath := filepath.Join(req.Path, urlHash+".part")
 	statePath := state.GetStatePath(tempPath)
 
