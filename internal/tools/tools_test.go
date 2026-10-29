@@ -41,3 +41,9 @@ func TestUrlNormalizer(t *testing.T) {
 		t.Logf("URL: %s -> %s", url, out)
 	}
 }
+
+func TestHashUrl(t *testing.T) {
+	url := "https://example.com/file.zip"
+	hashUrl := HashUrl(url)
+	t.Logf("URL: %s -> %s", url, hashUrl)
+}
