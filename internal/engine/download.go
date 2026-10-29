@@ -55,6 +55,9 @@ func Download(
 		maxWorkers = maxChunks
 	}
 
+	// Normalize url
+	req.URL, _ = tools.NormalizeURL(req.URL)
+
 	client := &scheduler.HeaderClient{
 		Base: &http.Client{
 			Jar: req.Jar,
