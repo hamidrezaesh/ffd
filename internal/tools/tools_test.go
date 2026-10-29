@@ -20,3 +20,24 @@ func TestUnique(t *testing.T) {
 	got := UniqueFilename(dir, "Movie", ".mkv")
 	t.Logf("Unique filename: %s", got)
 }
+
+func TestUrlNormalizer(t *testing.T) {
+	urls := []string{"https://localhost:8080/file",
+		"127.0.0.1/file",
+		"http://localhost/file",
+		"https://127.0.0.1/file",
+		"192.168.1.1/file",
+		"http://192.168.1.1/file",
+		"https://192.168.1.1/file",
+		"http://example.com/file",
+		"https://example.com/file",
+		"example.com/file",
+	}
+
+	var out string
+
+	for _, url := range urls {
+		out, _ = NormalizeURL(url)
+		t.Logf("URL: %s -> %s", url, out)
+	}
+}
