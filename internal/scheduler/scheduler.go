@@ -25,6 +25,7 @@ type Scheduler struct {
 	MaxChunks    int
 	ResumeChunks []ResumeChunk
 	OnPlan       func([]ResumeChunk) error
+	ETag         string
 }
 
 /*
@@ -124,6 +125,7 @@ func (s *Scheduler) fetchChunks(
 						Range:  resume.Range,
 						Index:  resume.Index,
 						Client: s.Client,
+						ETag:   s.ETag,
 					}
 
 					if err := Worker(
@@ -186,6 +188,7 @@ func Download(
 	preferredProtocol int,
 	resumeChunks []ResumeChunk,
 	onPlan func([]ResumeChunk) error,
+	etag string,
 ) (<-chan Chunk, <-chan error) {
 	scheduler := &Scheduler{
 		MaxRetries:   maxRetries,
@@ -197,6 +200,7 @@ func Download(
 		MaxChunks:    maxChunks,
 		ResumeChunks: resumeChunks,
 		OnPlan:       onPlan,
+		ETag:         etag,
 	}
 
 	out := make(chan Chunk)
@@ -249,6 +253,7 @@ func Download(
 
 			task := Task{
 				URL:    scheduler.URL,
+				ETag:   etag,
 				Range:  resume.Range,
 				Index:  resume.Index,
 				Client: scheduler.Client,

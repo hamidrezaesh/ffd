@@ -12,6 +12,7 @@ import (
 
 type Task struct {
 	URL    string
+	ETag   string
 	Range  ByteRange
 	Index  int
 	Client *HeaderClient
@@ -50,24 +51,30 @@ func fetchFromOffset(
 		fmt.Sprintf("bytes=%d-%d", requestStart, t.Range.End),
 	)
 
+	// Protect this segment against remote file changes.
+	if t.ETag != "" {
+		if strings.HasPrefix(t.ETag, "W/") {
+			return fmt.Errorf("cannot use weak ETag for If-Match")
+		}
+		req.Header.Set("If-Match", t.ETag)
+	}
+
 	resp, err := t.Client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusPreconditionFailed {
+		return fmt.Errorf("remote file changed: ETag mismatch")
+	}
+
 	if resp.StatusCode != http.StatusPartialContent {
 		return fmt.Errorf("unexpected HTTP status: %v", resp.Status)
 	}
 
-	// Verify that the server actually started the response
-	// at the byte ffd requested.
 	contentRange := resp.Header.Get("Content-Range")
-
-	expectedPrefix := fmt.Sprintf(
-		"bytes %d-",
-		requestStart,
-	)
+	expectedPrefix := fmt.Sprintf("bytes %d-", requestStart)
 
 	if !strings.HasPrefix(contentRange, expectedPrefix) {
 		return fmt.Errorf(

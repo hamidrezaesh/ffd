@@ -17,6 +17,7 @@ type Metadata struct {
 	AcceptRanges bool
 	Filename     string
 	Ext          string
+	ETag         string
 }
 
 func extractor(filename string) (string, string) {
@@ -85,7 +86,10 @@ func FetchMetadata(url string, resp *http.Response) (Metadata, error) {
 	// Check Accept-Ranges
 	acceptRanges := resp.Header.Get("Accept-Ranges") == "bytes"
 
-	// extract fileinfo
+	// Extract ETag
+	etag := resp.Header.Get("ETag")
+
+	// Extract file info
 	filename, ext, err := resolve(url, resp)
 	if err != nil {
 		return Metadata{}, err
@@ -97,5 +101,6 @@ func FetchMetadata(url string, resp *http.Response) (Metadata, error) {
 		AcceptRanges: acceptRanges,
 		Filename:     filename,
 		Ext:          ext,
+		ETag:         etag,
 	}, nil
 }

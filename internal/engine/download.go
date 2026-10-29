@@ -97,26 +97,45 @@ func Download(
 	)
 
 	if resumeExisting {
-		// Don't start another GET when resuming an existing partial file.
+		// Fetch current metadata before resuming.
 		resp, err = client.Head(req.URL)
 		if err != nil {
 			return nil, err
 		}
 
 		md, err = metadata.FetchMetadata(req.URL, resp)
+		_ = resp.Body.Close()
 		if err != nil {
-			_ = resp.Body.Close()
 			return nil, err
 		}
 
-		_ = resp.Body.Close()
-
 		saved := downloadState.Data()
+
 		if saved.URL != req.URL {
 			return nil, fmt.Errorf("saved download URL does not match")
 		}
-		if saved.TotalSize != md.TotalSize {
-			return nil, fmt.Errorf("remote file size changed; cannot safely resume")
+
+		// Restart if the remote file changed.
+		if saved.TotalSize != md.TotalSize || saved.ETag != md.ETag {
+			_ = downloadState.RemoveState()
+			_ = os.Remove(tempPath)
+
+			downloadState = nil
+			resumeExisting = false
+
+			// Start a fresh download.
+			startByte, resp, md, err = scheduler.DownloadInitial(
+				client,
+				req.URL,
+				func(chunk scheduler.Chunk) error {
+					initialChunks = append(initialChunks, chunk)
+					return nil
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			defer resp.Body.Close()
 		}
 	} else {
 		// Download initial bytes while fetching metadata.
@@ -280,6 +299,7 @@ func Download(
 				downloadState.SetPlan(chunks)
 				return downloadState.Save()
 			},
+			md.ETag,
 		)
 
 		for chanChunks != nil || chanErr != nil {
