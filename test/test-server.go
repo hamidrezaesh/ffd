@@ -34,7 +34,7 @@ It can be used to test features such as:
 
 Run from the project root with:
 
-	go run test/test-server.go
+	o run -tags testserver test/test-server.go
 
 The server listens on:
 
