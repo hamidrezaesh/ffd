@@ -7,6 +7,7 @@ import (
 )
 
 func init() {
+	// Root download flags.
 	rootCmd.Flags().IntVarP(&wait, "wait", "w", 0, "Wait before starting download (seconds)")
 	rootCmd.Flags().StringVarP(&output, "output", "o", "", "Custom Filename")
 	rootCmd.Flags().StringVarP(&path, "path", "p", ".", "Download Directory")
@@ -18,32 +19,33 @@ func init() {
 	rootCmd.Flags().BoolVarP(&overwrite, "overwrite", "", false, "Overwrite downloaded file and start fresh")
 
 	rootCmd.Flags().StringArrayVar(
-		&requestHeaders,
-		"header",
-		nil,
-		"Add HTTP header (Header: Value)",
+		&requestHeaders, "header", nil, "Add HTTP header (Header: Value)",
 	)
 
 	rootCmd.Flags().StringArrayVar(
-		&requestCookies,
-		"cookie",
-		nil,
-		"Add HTTP cookie (name=value)",
+		&requestCookies, "cookie", nil, "Add HTTP cookie (name=value)",
 	)
 
 	rootCmd.Flags().StringVar(
-		&requestCookieFile,
-		"cookie-file",
-		"",
-		"Load HTTP cookies from a Netscape cookie file",
+		&requestCookieFile, "cookie-file", "", "Load HTTP cookies from a Netscape cookie file",
 	)
 
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		fmt.Println(commandsHelp)
 	})
 
-	proxyCmd.Flags().IntVarP(&port, "port", "", 8000, "Port of the proxy")
+	// Proxy flags.
+	proxyCmd.Flags().IntVar(&port, "port", 8000, "Port of the proxy")
 	proxyCmd.Flags().StringVar(&upstreamProxyServerString, "set-proxy", "", "Set upstream proxy server")
+
+	proxyCmd.Flags().IntVar(&maxRetries, "max-retries", 4, "Maximum download retries")
+	proxyCmd.Flags().IntVar(&maxWorkers, "max-workers", 8, "Maximum concurrent workers")
+	proxyCmd.Flags().IntVar(&maxChunks, "max-chunks", 12, "Maximum download chunks")
+	proxyCmd.Flags().StringVar(&protocol, "protocol", "auto", "Preferred protocol")
+
+	proxyCmd.Flags().StringArrayVar(
+		&requestHeaders, "header", nil, "Add upstream HTTP header (Header: Value)",
+	)
 
 	proxyCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		fmt.Println(proxyHelp)

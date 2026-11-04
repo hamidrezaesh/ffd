@@ -55,12 +55,26 @@ Example: ffd <URL> --overwrite
 var proxyHelp string = `usage: ffd proxy [OPTION]
 
 Startup:
--h, --help        Show help
+-h, --help             Show help
 
-Options:
---port PORT   Port to run the proxy on (default 8000)
-Example: ffd proxy --port 9000
+Network:
+--port PORT            Port to run the proxy on (default 8000)
+--set-proxy PROXY      Set upstream proxy for FFD
 
---set-proxy PROXY    Set upstream proxy for ffd proxy
-Example: ffd proxy --set-proxy your-proxy
+Download:
+--max-retries N        Maximum download retries (default 4)
+--max-workers N        Maximum concurrent workers (default 8)
+--max-chunks N         Maximum download chunks (default 12)
+--protocol PROTOCOL    Preferred protocol: auto, http1, http2, http3
+
+Request:
+-H, --header HEADER    Add an upstream HTTP header
+Example: ffd proxy --header "Authorization: Bearer TOKEN"
+
+Examples:
+ffd proxy --port 9000
+ffd proxy --set-proxy http://127.0.0.1:8080
+ffd proxy --max-workers 16 --max-chunks 24
+ffd proxy --protocol http3
+ffd proxy --header "User-Agent: ffd/proxy"
 `

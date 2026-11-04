@@ -1,15 +1,22 @@
 package proxy
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/hamidrezaesh/ffd/internal/scheduler"
 )
 
 type Server struct {
-	Addr  string
-	Proxy *url.URL
+	Addr              string
+	Proxy             *url.URL
+	Headers           scheduler.Headers
+	CookieJar         http.CookieJar
+	MaxRetries        int
+	MaxWorkers        int
+	MaxChunks         int
+	PreferredProtocol int
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -21,26 +28,32 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.handleRequest(w, r)
 }
 
-func Start(port int, proxyServer *url.URL) {
-	// set port to default port if not exists
-	defaultPort := 8000
-	if port == 0 {
-		port = defaultPort
+func Start(s Server) {
+	// Set default address if not provided.
+	if s.Addr == "" {
+		s.Addr = "127.0.0.1:8000"
 	}
 
-	server := &Server{
-		Addr:  fmt.Sprintf("127.0.0.1:%v", port),
-		Proxy: proxyServer,
+	// Set defaults.
+	if s.MaxRetries <= 0 {
+		s.MaxRetries = 4
+	}
+	if s.MaxWorkers <= 0 {
+		s.MaxWorkers = 8
+	}
+	if s.MaxChunks <= 0 {
+		s.MaxChunks = 12
 	}
 
 	httpServer := &http.Server{
-		Addr:    server.Addr,
-		Handler: server,
+		Addr:    s.Addr,
+		Handler: &s,
 	}
 
-	log.Println("ffd proxy listening on ", server.Addr)
+	log.Println("FFD proxy listening on", s.Addr)
 
-	if err := httpServer.ListenAndServe(); err != nil {
+	if err := httpServer.ListenAndServe(); err != nil &&
+		err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
 }
