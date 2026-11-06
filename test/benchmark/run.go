@@ -127,10 +127,11 @@ func buildFFD() error {
 		return fmt.Errorf("create build directory: %w", err)
 	}
 
+	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
-		cmd := exec.Command("go", "build", "-o", "build/ffd.exe", ".")
+		cmd = exec.Command("go", "build", "-o", "build/ffd.exe", ".")
 	} else {
-		cmd := exec.Command("go", "build", "-o", "build/ffd", ".")
+		cmd = exec.Command("go", "build", "-o", "build/ffd", ".")
 	}
 
 	cmd.Dir = "../.."
@@ -202,10 +203,12 @@ func download(downloader, url, dir string) error {
 }
 
 func getFFDPath() (string, error) {
+	var path string
+	var err error
 	if runtime.GOOS == "windows" {
-		path, err := filepath.Abs("../../build/ffd.exe")
+		path, err = filepath.Abs("../../build/ffd.exe")
 	} else {
-		path, err := filepath.Abs("../../build/ffd")
+		path, err = filepath.Abs("../../build/ffd")
 	}
 
 	if err != nil {
