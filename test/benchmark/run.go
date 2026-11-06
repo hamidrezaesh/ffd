@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -126,7 +127,12 @@ func buildFFD() error {
 		return fmt.Errorf("create build directory: %w", err)
 	}
 
-	cmd := exec.Command("go", "build", "-o", "build/ffd", ".")
+	if runtime.GOOS == "windows" {
+		cmd := exec.Command("go", "build", "-o", "build/ffd.exe", ".")
+	} else {
+		cmd := exec.Command("go", "build", "-o", "build/ffd", ".")
+	}
+
 	cmd.Dir = "../.."
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -196,7 +202,12 @@ func download(downloader, url, dir string) error {
 }
 
 func getFFDPath() (string, error) {
-	path, err := filepath.Abs("../../build/ffd")
+	if runtime.GOOS == "windows" {
+		path, err := filepath.Abs("../../build/ffd.exe")
+	} else {
+		path, err := filepath.Abs("../../build/ffd")
+	}
+
 	if err != nil {
 		return "", err
 	}
