@@ -50,6 +50,10 @@ func init() {
 		[]string{"ffd", "aria2", "wget"},
 		"Tools to run benchmark",
 	)
+
+	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		fmt.Println(benchmarkHelp)
+	})
 }
 
 func Execute() {
