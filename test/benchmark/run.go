@@ -53,7 +53,7 @@ func runBenchmark(cmd *cobra.Command, args []string) error {
 		for i := 1; i <= runs; i++ {
 			fmt.Printf("\nRun %d/%d\n", i, runs)
 
-			for _, downloader := range []string{"ffd", "aria2", "wget"} {
+			for _, downloader := range tools {
 				if downloader != "ffd" {
 					binary := downloader
 					if binary == "aria2" {
@@ -116,7 +116,17 @@ func runBenchmark(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("write benchmark results: %w", err)
 	}
 
-	fmt.Println("\nResults written to RESULT.md")
+	absPath, _ := filepath.Abs("RESULT.md")
+	url := "file://" + absPath
+
+	fmt.Printf("\nResults written to \033]8;;%s\033\\RESULT.md\033]8;;\033\\\n", url)
+	fmt.Print("\n\n[====]RESULT:\n")
+	content, err := os.ReadFile("RESULT.md")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(content))
 	return nil
 }
 

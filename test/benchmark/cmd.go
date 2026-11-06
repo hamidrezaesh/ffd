@@ -12,6 +12,7 @@ var (
 	sizes []string
 	runs  int
 	local bool
+	tools []string
 )
 
 var rootCmd = &cobra.Command{
@@ -41,6 +42,13 @@ func init() {
 		"local",
 		false,
 		"Use local benchmark files from 127.0.0.1:8080",
+	)
+
+	rootCmd.Flags().StringSliceVar(
+		&tools,
+		"tools",
+		[]string{"ffd", "aria2", "wget"},
+		"Tools to run benchmark",
 	)
 }
 
