@@ -13,6 +13,19 @@ import (
 	"time"
 )
 
+/*
+to generate temp data
+
+dd if=/dev/urandom of=testdata/10mb.bin \
+bs=1M count=10 iflag=fullblock status=progress
+
+dd if=/dev/urandom of=testdata/100mb.bin \
+bs=1M count=100 iflag=fullblock status=progress
+
+dd if=/dev/urandom of=testdata/1gb.bin \
+bs=1M count=1024 iflag=fullblock status=progress
+*/
+
 func etagForFile(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
