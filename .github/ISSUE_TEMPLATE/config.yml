@@ -1,0 +1,10 @@
+blank_issues_enabled: true
+
+contact_links:
+  - name: FFD Documentation
+    url: https://ffd-cli.pages.dev/docs
+    about: Installation, usage, and CLI reference.
+
+  - name: FFD Github Wiki
+    url: https://github.com/hamidrezaesh/ffd/wiki
+    about: Documentation for ffd on github wiki.
